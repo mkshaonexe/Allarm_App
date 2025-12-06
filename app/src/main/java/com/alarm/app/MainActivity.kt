@@ -69,8 +69,9 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent) // Update the intent 
+        // Always recreate if we need to show alarm screen to ensure fresh state
         if (intent.getBooleanExtra("SHOW_ALARM_SCREEN", false)) {
-            // Recreate to reload the composable with new intent data
+            android.util.Log.d("MainActivity", "🔔 onNewIntent - navigating to ringing screen")
             recreate()
         }
     }
