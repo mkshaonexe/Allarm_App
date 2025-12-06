@@ -89,14 +89,15 @@ fun HomeScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFF1C1C1E), // Dark Background
+        containerColor = Color(0xFF000000), // Pure black or very dark background
         topBar = {
             TopAppBar(
                 title = { 
                     Text(
                         "Alarm App", 
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color.White,
+                        fontSize = 22.sp
                     ) 
                 },
                 actions = {
@@ -110,14 +111,15 @@ fun HomeScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1C1C1E)
+                    containerColor = Color(0xFF000000)
                 )
             )
         },
         bottomBar = {
             NavigationBar(
-                containerColor = Color(0xFF2C2C2E), // Lighter dark to separate from background
-                contentColor = Color.White
+                containerColor = Color(0xFF000000), // Match background
+                contentColor = Color.White,
+                tonalElevation = 0.dp
             ) {
                 val items = listOf("Alarm", "Sleep", "Morning", "Report", "Setting")
                 val icons = listOf(
@@ -129,15 +131,28 @@ fun HomeScreen(
                 )
 
                 items.forEachIndexed { index, item ->
+                    val isSelected = selectedTab == index
                     NavigationBarItem(
-                        icon = { Icon(icons[index], contentDescription = item) },
-                        label = { Text(item, fontSize = 10.sp) }, // Smaller text
-                        selected = selectedTab == index,
+                        icon = { 
+                            Icon(
+                                icons[index], 
+                                contentDescription = item,
+                                tint = if (isSelected) Color.White else Color.Gray 
+                            ) 
+                        },
+                        label = { 
+                            Text(
+                                item, 
+                                fontSize = 10.sp,
+                                color = if (isSelected) Color.White else Color.Gray
+                            ) 
+                        },
+                        selected = isSelected,
                         onClick = { selectedTab = index },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Color.White,
                             selectedTextColor = Color.White,
-                            indicatorColor = Color.Transparent, // Remove the M3 pill background
+                            indicatorColor = Color.Transparent, // No pill
                             unselectedIconColor = Color.Gray,
                             unselectedTextColor = Color.Gray
                         )
@@ -146,12 +161,13 @@ fun HomeScreen(
             }
         },
         floatingActionButton = {
-            // Only show FAB on Alarm tab
+            // FAB matches the red accent in the reference (bottom right, seems to be part of the UI but a FAB works)
             if (selectedTab == 0) {
                 FloatingActionButton(
                     onClick = { navController.navigate("create_alarm") },
-                    containerColor = Color(0xFFFF3B30), // Red accent
-                    contentColor = Color.White
+                    containerColor = Color(0xFFFF5252), // Bright Red
+                    contentColor = Color.White,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add Alarm")
                 }
@@ -163,50 +179,59 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp) // Reduced spacing
+                contentPadding = PaddingValues(bottom = 80.dp), // Extra padding for FAB/BottomBar
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header item for "Ring in..."
+                
+                // 1. Header "Ring in..."
                 item {
-                    if (nextAlarmString.isNotEmpty()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 4.dp) // Reduced padding
-                        ) {
-                            Text(
-                                text = nextAlarmString,
-                                color = Color.White,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp // Slightly smaller header
-                            )
-                            Icon(
-                                Icons.Default.KeyboardArrowRight, 
-                                contentDescription = null, 
-                                tint = Color.Gray,
-                                modifier = Modifier.size(16.dp) // Smaller icon
-                            )
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        if (nextAlarmString.isNotEmpty()) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = nextAlarmString,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp
+                                )
+                                Icon(
+                                    Icons.Default.KeyboardArrowRight, 
+                                    contentDescription = null, 
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                 }
 
+                // 2. Tracker Section
+                item {
+                     TrackerSection()
+                }
+
+                // 3. Alarm List
                 items(alarms, key = { it.id }) { alarm ->
-                    AlarmCard(
-                        alarm = alarm,
-                        onToggle = { viewModel.toggleAlarm(alarm) },
-                        onDelete = { viewModel.deleteAlarm(alarm) },
-                        onDuplicate = { viewModel.duplicateAlarm(alarm) },
-                        onPreview = { 
-                            navController.navigate("ringing")
-                        },
-                        onSkip = {
-                            Toast.makeText(context, "Alarm skipped once", Toast.LENGTH_SHORT).show()
-                        },
-                        onClick = { navController.navigate("edit_alarm/${alarm.id}") }
-                    )
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        AlarmCard(
+                            alarm = alarm,
+                            onToggle = { viewModel.toggleAlarm(alarm) },
+                            onDelete = { viewModel.deleteAlarm(alarm) },
+                            onDuplicate = { viewModel.duplicateAlarm(alarm) },
+                            onPreview = { 
+                                navController.navigate("ringing")
+                            },
+                            onSkip = {
+                                Toast.makeText(context, "Alarm skipped once", Toast.LENGTH_SHORT).show()
+                            },
+                            onClick = { navController.navigate("edit_alarm/${alarm.id}") }
+                        )
+                    }
                 }
             }
         } else {
-            // Placeholder for other tabs
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -269,25 +294,48 @@ fun AlarmCard(
 
     Card(
         onClick = onClick,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp), // Rounder "cute" corners
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp), // Very round corners
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2C2C2E)
+            containerColor = Color(0xFF1C1C1E) // Dark gray card
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 12.dp) // Adjusted padding for balance
+                .padding(horizontal = 24.dp, vertical = 20.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Box {
                 Column {
-                    // Days of week header
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(bottom = 6.dp)
+                    // Time and AM/PM
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val hour = if (alarm.hour > 12) alarm.hour - 12 else if (alarm.hour == 0) 12 else alarm.hour
+                        val minuteStr = String.format("%02d", alarm.minute)
+                        val amPm = if (alarm.hour >= 12) "PM" else "AM"
+                        
+                        Text(
+                            text = "$hour:$minuteStr",
+                            fontSize = 48.sp, // Large font
+                            fontWeight = FontWeight.Normal,
+                            color = if (alarm.isEnabled) Color.White else Color.Gray,
+                            lineHeight = 48.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = amPm,
+                            fontSize = 16.sp,
+                            color = if (alarm.isEnabled) Color.White else Color.Gray,
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Days of week
+                   Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         val days = listOf("S", "M", "T", "W", "T", "F", "S")
                         days.forEachIndexed { index, day ->
@@ -295,70 +343,52 @@ fun AlarmCard(
                             val isActive = alarm.daysOfWeek.contains(dayId)
                             Text(
                                 text = day,
-                                fontSize = 11.sp,
-                                color = if (isActive && alarm.isEnabled) Color.White else Color.Gray.copy(alpha = 0.6f),
-                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium
+                                fontSize = 12.sp,
+                                color = if (isActive && alarm.isEnabled) Color.White else Color.Gray.copy(alpha = 0.5f),
+                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
                             )
                         }
                     }
-
-                    // Time and Mission Icon Row
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        val hour = if (alarm.hour > 12) alarm.hour - 12 else if (alarm.hour == 0) 12 else alarm.hour
-                        val minuteStr = String.format("%02d", alarm.minute)
-                        val amPm = if (alarm.hour >= 12) "PM" else "AM"
-                        
-                        Text(
-                            text = "$hour:$minuteStr",
-                            fontSize = 36.sp, // Balanced size
-                            fontWeight = FontWeight.Normal,
-                            color = if (alarm.isEnabled) Color.White else Color.Gray
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = amPm,
-                            fontSize = 15.sp,
-                            modifier = Modifier.padding(bottom = 5.dp),
-                            color = if (alarm.isEnabled) Color.White else Color.Gray
-                        )
-                        
-                        // Mission Icon
-                        if (alarm.challengeType != com.alarm.app.data.model.ChallengeType.NONE) {
-                             Spacer(modifier = Modifier.width(8.dp))
-                             Icon(
-                                 imageVector = Icons.Default.Extension,
-                                 contentDescription = "Mission",
-                                 tint = if (alarm.isEnabled) Color.White.copy(alpha = 0.7f) else Color.Gray,
-                                 modifier = Modifier
-                                    .size(18.dp)
-                                    .padding(bottom = 5.dp)
-                             )
-                        }
+                    
+                    // Mission Icon
+                    if (alarm.challengeType != com.alarm.app.data.model.ChallengeType.NONE) {
+                         Spacer(modifier = Modifier.height(8.dp))
+                         Icon(
+                             imageVector = Icons.Default.Extension,
+                             contentDescription = "Mission",
+                             tint = if (alarm.isEnabled) Color.White.copy(alpha = 0.7f) else Color.Gray,
+                             modifier = Modifier.size(20.dp)
+                         )
                     }
                 }
             }
 
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Switch(
                     checked = alarm.isEnabled,
                     onCheckedChange = { onToggle(it) },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF26C6DA), // Teal color from reference
+                        checkedTrackColor = Color(0xFF26C6DA), // Teal color
                         uncheckedThumbColor = Color.Gray,
                         uncheckedTrackColor = Color.DarkGray,
                         uncheckedBorderColor = Color.Transparent
                     ),
-                    modifier = Modifier.scale(0.8f) // Slightly smaller switch
+                    modifier = Modifier.scale(0.9f)
                 )
 
                  Box {
-                    IconButton(onClick = { expanded = true }, modifier = Modifier.size(32.dp)) {
+                    IconButton(
+                        onClick = { expanded = true }, 
+                        modifier = Modifier.size(24.dp)
+                    ) {
                         Icon(
                             Icons.Default.MoreVert, 
                             contentDescription = "Options",
                             tint = Color.Gray,
-                            modifier = Modifier.size(20.dp)
                         )
                     }
                     DropdownMenu(
