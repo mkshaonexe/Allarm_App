@@ -32,29 +32,52 @@ class MainActivity : ComponentActivity() {
         setContent {
             AllarmAppTheme {
                 val navController = rememberNavController()
-                
+                val context = LocalContext.current
+                val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
                 // Permission State
-                var hasNotificationPermission by remember {
-                    mutableStateOf(
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                            androidx.core.content.ContextCompat.checkSelfPermission(
-                                this@MainActivity,
-                                android.Manifest.permission.POST_NOTIFICATIONS
-                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        } else {
-                            true
-                        }
-                    )
+                var hasNotificationPermission by remember { mutableStateOf(false) }
+                var hasOverlayPermission by remember { mutableStateOf(false) }
+
+                // Function to check permissions
+                fun checkPermissions() {
+                    hasNotificationPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        androidx.core.content.ContextCompat.checkSelfPermission(
+                            context,
+                            android.Manifest.permission.POST_NOTIFICATIONS
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    } else {
+                        true
+                    }
+
+                    hasOverlayPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                        android.provider.Settings.canDrawOverlays(context)
+                    } else {
+                        true
+                    }
                 }
 
-                var hasOverlayPermission by remember {
-                    mutableStateOf(
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                            android.provider.Settings.canDrawOverlays(this@MainActivity)
-                        } else {
-                            true
+                // Initial check
+                LaunchedEffect(Unit) {
+                    checkPermissions()
+                }
+
+                // Identify if we need to show the overlay permission screen
+                // We show it if we have notification permission (or asked for it) BUT miss overlay permission.
+                // However, the prompt says "ask first notification ... then the overlay".
+                // So if we are creating the start destination, we need to be careful.
+
+                // Lifecycle observer to re-check permission on resume (e.g. coming back from settings)
+                DisposableEffect(lifecycleOwner) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) {
+                            checkPermissions()
                         }
-                    )
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose {
+                        lifecycleOwner.lifecycle.removeObserver(observer)
+                    }
                 }
 
                 // Request Notification Permission on startup (Android 13+)
@@ -63,6 +86,7 @@ class MainActivity : ComponentActivity() {
                         android.Manifest.permission.POST_NOTIFICATIONS
                     ) { isGranted ->
                         hasNotificationPermission = isGranted
+                        // If granted, we re-check logic implicitly via state update
                     }
                     LaunchedEffect(Unit) {
                         if (!permissionState.status.isGranted) {
@@ -70,25 +94,44 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                
-                // Logic to determine initial screen based on permissions
-                // If notification granted (or <13), check overlay. 
-                // We show overlay screen only if system alert window is strictly required and not granted.
-                // Simple flow: Notification -> if done -> Check Overlay -> if missing -> Show Overlay Screen.
-                
-                // Handle notification click / service launch
-                // If we are launching from an alarm (SHOW_ALARM_SCREEN), we bypass permission checks effectively or handle them in the ringing screen (but ringing screen needs overlay usually to show on lock screen prior to Android 10, or just fullscreen intent).
-                // Let's assume ringing param takes precedence.
 
+                // Logic to determine initial screen
                 val ringingParams = getRingingParams(intent)
                 val isRinging = intent.getBooleanExtra("SHOW_ALARM_SCREEN", false)
                 
+                // If ringing, go to ringing.
+                // If not ringing:
+                // 1. If Overlay permission missing, go to "overlay_permission".
+                // 2. Otherwise "home".
+                // calculate startDestination only once or remember it? 
+                // Navigation components don't like dynamic startDestination changes easily without logic.
+                
+                // We can use a Splash/Loading route or just logic. 
+                // Let's stick to the logic: If we don't have overlay permission, that's the "blocking" screen.
+                // Notification permission is asked via system dialog on top of whatever screen we are on.
+                
                 val startDestination = if (isRinging) {
                     "ringing"
-                } else if (!hasOverlayPermission && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                     "overlay_permission"
+                } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M && 
+                           !android.provider.Settings.canDrawOverlays(context)) { 
+                           // Use raw check for initial state to avoid race condition with state var
+                    "overlay_permission" 
                 } else {
                     "home"
+                }
+
+                // Auto-navigation from Overlay to Home if permission granted
+                LaunchedEffect(hasOverlayPermission) {
+                    if (hasOverlayPermission) {
+                         // Check if we are currently on overlay_permission screen to avoid random jumps
+                         // But for simplicity, if we have permission, we shouldn't be on that screen.
+                         val currentRoute = navController.currentDestination?.route
+                         if (currentRoute == "overlay_permission") {
+                             navController.navigate("home") {
+                                 popUpTo("overlay_permission") { inclusive = true }
+                             }
+                         }
+                    }
                 }
 
                 NavHost(navController = navController, startDestination = startDestination) {
