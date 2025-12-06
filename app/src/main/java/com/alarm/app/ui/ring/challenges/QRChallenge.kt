@@ -78,20 +78,32 @@ fun QRChallenge(
                             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                             .build()
 
+                        var isCompleted = false
                         imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
+                            if (isCompleted) {
+                                imageProxy.close()
+                                return@setAnalyzer
+                            }
+                            
                             val mediaImage = imageProxy.image
                             if (mediaImage != null) {
                                 val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
                                 val scanner = BarcodeScanning.getClient()
                                 scanner.process(image)
                                     .addOnSuccessListener { barcodes ->
+                                        if (isCompleted) return@addOnSuccessListener
+                                        
                                         for (barcode in barcodes) {
                                             val rawValue = barcode.rawValue
                                             if (rawValue != null) {
                                                 // For now, accept ANY QR code for demo
-                                                // if (rawValue == targetContent) {
-                                                    onCompleted()
-                                                // }
+                                                if (!isCompleted) {
+                                                    isCompleted = true
+                                                    executor.execute {
+                                                        onCompleted()
+                                                    }
+                                                }
+                                                break // Stop checking other barcodes
                                             }
                                         }
                                     }
