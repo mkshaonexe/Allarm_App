@@ -353,8 +353,6 @@ fun ChallengeOption(type: ChallengeType, isSelected: Boolean, onClick: () -> Uni
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
 fun WheelPicker(
     count: Int,
     initialItem: Int,
