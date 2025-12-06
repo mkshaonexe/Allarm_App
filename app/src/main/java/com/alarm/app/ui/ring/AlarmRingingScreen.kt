@@ -56,6 +56,11 @@ fun AlarmRingingScreen(
     val context = LocalContext.current
     var isChallengeActive by remember { mutableStateOf(startChallengeImmediately) }
     
+    // Block Back Button to prevent accidental closing
+    androidx.activity.compose.BackHandler(enabled = true) {
+        // Do nothing. User must Dismiss or Snooze.
+    }
+    
     // Parse the challenge type
     val challengeType = try {
         if (initialChallengeTypeStr != null) ChallengeType.valueOf(initialChallengeTypeStr) else ChallengeType.NONE
@@ -107,89 +112,98 @@ fun AlarmRingingScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(32.dp),
+                    .padding(horizontal = 24.dp, vertical = 48.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                // "Notification-like" Header
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF1C1C1E)) // Notification gray bg
+                        .padding(16.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground), // Fallback icon
-                        contentDescription = "Icon",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text("Alarmy • Just now", color = Color.Gray, fontSize = 14.sp)
+                   Column {
+                       Row(
+                           verticalAlignment = Alignment.CenterVertically
+                       ) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.AccessAlarm, // Or app icon
+                                contentDescription = "App Icon",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text("Alarmy • Just now", color = Color.Gray, fontSize = 12.sp)
+                       }
+                       Spacer(modifier = Modifier.height(8.dp))
+                       Text("Alarmy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                       Text("Tap to dismiss ⏰ ⏰ ⏰ ⏰ ⏰", color = Color.Gray, fontSize = 12.sp)
+                   }
                 }
-                Text("Alarmy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.fillMaxWidth().padding(top=4.dp))
-                Text("Tap to dismiss ⏰", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.fillMaxWidth())
                 
-                Spacer(modifier = Modifier.height(32.dp))
-                
+                Spacer(modifier = Modifier.weight(0.1f))
+
                 // Big Time
                 Text(
                     text = String.format("%02d:%02d", currentTime.get(Calendar.HOUR_OF_DAY), currentTime.get(Calendar.MINUTE)),
-                    fontSize = 80.sp,
+                    fontSize = 86.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color.White,
+                    letterSpacing = (-2).sp
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Moon Image (Placeholder circle for now, or use a drawable if available)
+                // Moon Image with Snooze
                 Box(
-                    modifier = Modifier.size(260.dp),
-                    contentAlignment = Alignment.BottomCenter
+                    modifier = Modifier.size(300.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Moon Graphic (Circle)
+                    // Moon Graphic Placeholder - Pure rounded Circle
                     Box(
                         modifier = Modifier
-                            .size(240.dp)
+                            .size(280.dp)
                             .clip(CircleShape)
-                            .background(Color.Gray.copy(alpha=0.3f)) 
-                            .align(Alignment.Center)
+                            .background(Color.DarkGray)
                     ) {
-                        // In a real app, use: Image(painter = painterResource(R.drawable.moon), ...)
-                         Text("🌑", fontSize = 180.sp, modifier = Modifier.align(Alignment.Center))
+                         Text("🌑", fontSize = 200.sp, modifier = Modifier.align(Alignment.Center))
                     }
                     
-                    // Snooze Pill Button Overlay
+                    // Snooze Button Floating Over Moon (Bottom)
                     Surface(
                         onClick = snoozeAlarm,
-                        shape = RoundedCornerShape(50),
-                        color = Color(0xFFEEEEEE),
+                        shape = RoundedCornerShape(percent = 50),
+                        color = Color.White,
                         modifier = Modifier
-                            .padding(bottom = 24.dp)
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(50))
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 32.dp)
+                            .height(56.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 24.dp)
+                            modifier = Modifier.padding(horizontal = 32.dp)
                         ) {
                             Text(
                                 "3", 
                                 color = Color.White, 
                                 fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
                                 modifier = Modifier
                                     .background(Color.Black, CircleShape)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
                             )
-                            Spacer(modifier = Modifier.size(8.dp))
+                            Spacer(modifier = Modifier.size(12.dp))
                             Text("Snooze", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                     }
                 }
-
+                
                 Spacer(modifier = Modifier.weight(1f))
                 
-                // Dismiss Button
+                // Dismiss Button - Bottom Red Pill
                 Button(
                     onClick = {
-                        // If no challenge, just finish. If challenge, show it.
                         if (challengeType == ChallengeType.NONE) {
                             finishAlarm()
                         } else {
@@ -200,7 +214,8 @@ fun AlarmRingingScreen(
                     shape = RoundedCornerShape(50),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp)
+                        .height(72.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text("Dismiss", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
@@ -208,4 +223,3 @@ fun AlarmRingingScreen(
         }
     }
 }
-

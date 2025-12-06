@@ -179,7 +179,7 @@ class AlarmService : Service() {
 
     private fun createNotification(alarmId: String?, challengeType: String?): Notification {
         val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             putExtra("ALARM_ID", alarmId)
             putExtra("CHALLENGE_TYPE", challengeType)
             putExtra("SHOW_ALARM_SCREEN", true)
