@@ -43,39 +43,15 @@ fun ShakeChallenge(
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         
-        val listener = object : SensorEventListener {
-            private var lastAcceleration = 0f
-            private var currentAcceleration = SensorManager.GRAVITY_EARTH
-            private var shakeThreshold = 12f // Sensitivity
-            
-            override fun onSensorChanged(event: SensorEvent?) {
-                event?.let {
-                    val x = it.values[0]
-                    val y = it.values[1]
-                    val z = it.values[2]
-                    
-                    val last = currentAcceleration
-                    currentAcceleration = sqrt((x * x + y * y + z * z).toDouble()).toFloat()
-                    val delta = currentAcceleration - last
-                    lastAcceleration = lastAcceleration * 0.9f + delta
-                    
-                    if (lastAcceleration > shakeThreshold) {
-                         // Simple shake detection logic (debounce needed in real app)
-                         // Here we assume high frequency update
-                         // Let's use a simpler logic for demo or debounce locally
-                    }
-                }
-            }
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-        }
-
-        // Improved Shake Detection Logic Wrapper
         val shakeDetector = object : SensorEventListener {
             private var mAccel = 0.0f
             private var mAccelCurrent = SensorManager.GRAVITY_EARTH
             private var mAccelLast = SensorManager.GRAVITY_EARTH
+            private var isCompleted = false
 
             override fun onSensorChanged(event: SensorEvent) {
+                if (isCompleted) return
+
                 val x = event.values[0]
                 val y = event.values[1]
                 val z = event.values[2]
@@ -87,6 +63,7 @@ fun ShakeChallenge(
                 if (mAccel > 12) {
                     currentShakes++
                     if (currentShakes >= targetShakes) {
+                        isCompleted = true
                         onCompleted()
                     }
                 }
