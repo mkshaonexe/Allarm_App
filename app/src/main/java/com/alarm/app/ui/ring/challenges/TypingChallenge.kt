@@ -2,19 +2,29 @@ package com.alarm.app.ui.ring.challenges
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,9 +36,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -38,17 +54,15 @@ fun TypingChallenge(
     onCompleted: () -> Unit
 ) {
     val phrases = listOf(
-        "The early bird catches the worm",
+        "Live with joy",
         "Practice makes perfect",
-        "Action speaks louder than words",
-        "Better late than never",
+        "Action speaks louder",
         "Time is money"
     )
     val targetPhrase = remember { phrases.random() }
     var userText by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    var isError by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -58,68 +72,109 @@ fun TypingChallenge(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black) // Background is Black
+            .background(Color(0xFF1C1C1E))
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+         // Top Bar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { /* Handle back */ }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+            }
+            Text("1 / 2", color = Color.Gray, fontSize = 16.sp)
+             IconButton(onClick = { /* Toggle Mute */ }) {
+                Icon(Icons.Default.VolumeOff, contentDescription = "Mute", tint = Color.Gray)
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Text Display Area
+        // Logic: Show targetPhrase. Typed characters should match. 
+        // We can color correct chars Green, incorrect Red, remaining Gray/White.
+        // Or simplified as per screenshot: White text, maybe typed part highlighted? 
+        // Let's implement simple "Current typed vs Target" diff visual.
+        
         Text(
-            text = "Type this exactly:",
-            color = Color.Gray,
-            fontSize = 18.sp
+            text = buildAnnotatedString {
+                // Typed part
+                withStyle(style = SpanStyle(color = Color.White, fontWeight = FontWeight.Bold)) {
+                    append(userText)
+                }
+                // Remaining part
+                if (userText.length < targetPhrase.length) {
+                    withStyle(style = SpanStyle(color = Color.Gray.copy(alpha=0.5f), fontWeight = FontWeight.Bold)) {
+                        append(targetPhrase.substring(userText.length))
+                    }
+                }
+            },
+            fontSize = 32.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        // Cursor indicator (Blue drop in screenshot, simplified here as a blinker or nothing)
+        
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Invisible input field to capture typing
+        BasicTextField(
+            value = userText,
+            onValueChange = { newValue ->
+                // Only allow typing if it matches the target so far (strict mode) or just allow free typing?
+                // Screenshot shows "Liv" with cursor, implies free typing or valid prefix.
+                // Let's allow typing but cap length.
+                if (newValue.length <= targetPhrase.length) {
+                    userText = newValue
+                }
+            },
+            focusRequester = focusRequester,
+            modifier = Modifier.size(1.dp), // Hidden but focused
+            cursorBrush = SolidColor(Color.Transparent),
+            textStyle = androidx.compose.ui.text.TextStyle(color = Color.Transparent),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { 
+                 if (userText.equals(targetPhrase, ignoreCase = true)) {
+                    onCompleted()
+                 }
+            })
+        )
+        
+        Spacer(modifier = Modifier.weight(1f))
+        
+        // Progress / Count
+        Text(
+            text = "${userText.length} / ${targetPhrase.length}",
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
         )
         
         Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = targetPhrase,
-            color = Color.White, // White text for visibility
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        OutlinedTextField(
-            value = userText,
-            onValueChange = { 
-                userText = it
-                isError = false
-            },
-            label = { Text("Type here") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                cursorColor = MaterialTheme.colorScheme.primary,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = Color.Gray,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = Color.Gray
-            ),
-            singleLine = true,
-            isError = isError
-        )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
+
+        // Complete Button
+        val isComplete = userText.equals(targetPhrase, ignoreCase = true)
         Button(
             onClick = {
-                if (userText.trim().equals(targetPhrase, ignoreCase = true)) {
+                if (isComplete) {
                     onCompleted()
-                } else {
-                    isError = true
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = if (isComplete) MaterialTheme.colorScheme.primary else Color(0xFF2C2C2E),
+                contentColor = if (isComplete) Color.White else Color.Gray
             )
         ) {
-            Text("Submit", fontSize = 18.sp)
+            Text("Complete", fontSize = 18.sp)
         }
+        
+        Spacer(modifier = Modifier.height(16.dp)) // Space for keyboard
     }
 }
