@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
 
                 // Handle notification click / service launch
                 val startDestination = determineStartDestination(intent)
+                val ringingParams = getRingingParams(intent)
 
                 NavHost(navController = navController, startDestination = startDestination) {
                     composable("home") {
@@ -52,7 +53,13 @@ class MainActivity : ComponentActivity() {
                         com.alarm.app.ui.alarm.AlarmScreen(navController = navController, alarmId = alarmId)
                     }
                     composable("ringing") {
-                        com.alarm.app.ui.ring.AlarmRingingScreen(navController = navController)
+                        // Pass parameters to the ringing screen
+                        com.alarm.app.ui.ring.AlarmRingingScreen(
+                            navController = navController,
+                            alarmId = ringingParams.first,
+                            initialChallengeTypeStr = ringingParams.second,
+                            startChallengeImmediately = ringingParams.third
+                        )
                     }
                 }
             }
@@ -61,11 +68,9 @@ class MainActivity : ComponentActivity() {
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        setIntent(intent) // Update the intent for onResume or recomposition if needed
-        // Note: In Compose, handling new intents navigation usually requires observing the intent or a side effect.
-        // For simplicity, if we receive a ringing intent while alive, we could restart activity or navigation.
+        setIntent(intent) // Update the intent 
         if (intent.getBooleanExtra("SHOW_ALARM_SCREEN", false)) {
-            // Force recreation to catch the new start destination or handle navigation
+            // Recreate to reload the composable with new intent data
             recreate()
         }
     }
@@ -76,5 +81,13 @@ class MainActivity : ComponentActivity() {
         } else {
             "home"
         }
+    }
+    
+    // Returns Triple(alarmId, challengeType, startChallengeImmediately)
+    private fun getRingingParams(intent: Intent?): Triple<String?, String?, Boolean> {
+        val alarmId = intent?.getStringExtra("ALARM_ID")
+        val challengeType = intent?.getStringExtra("CHALLENGE_TYPE")
+        val startImmediate = intent?.getBooleanExtra("START_CHALLENGE", false) ?: false
+        return Triple(alarmId, challengeType, startImmediate)
     }
 }

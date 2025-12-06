@@ -42,57 +42,41 @@ class AlarmService : Service() {
         val alarmId = intent?.getStringExtra("ALARM_ID")
         val challengeType = intent?.getStringExtra("CHALLENGE_TYPE")
         
-        Log.d("AlarmService", "🔔 Service Command: $action for $alarmId")
+        Log.d("AlarmService", "🔔 Service Command: $action for $alarmId, Challenge: $challengeType")
 
         when (action) {
             "ACTION_SNOOZE" -> {
-                // Handle Snooze: Stop ringing, Schedule new alarm for +5 mins
                 Log.d("AlarmService", "💤 Snooze clicked")
-                stopSelf() // Stops service (sound/vibration)
-                // TODO: Actual rescheduling should be triggered here or by the Receiver handling the action
-                // For simplicity, we'll broadcast a "SNOOZE" intent to AlarmReceiver or handle it here if we inject Scheduler
-                // Let's rely on the PendingIntent to trigger a Boardcast or Activity.
-                // Actually, let's make the notification action trigger a BroadcastReceiver that handles the logic.
-                // But to save time/complexity, let's just use a dedicated receiver or handle in Service if possible (but Service is stopping).
-                // Better approach: Redirect to a BroadcastReceiver that reschedules.
-                
-                // For now, let's assume the action launches a Receiver. 
-                // Wait, I will modify the Notification Action to point to a Receiver.
+                stopSelf() 
+                val snoozeIntent = Intent(this, com.alarm.app.data.alarm.SnoozeReceiver::class.java).apply {
+                    this.action = "ACTION_SNOOZE"
+                    putExtra("ALARM_ID", alarmId)
+                }
+                sendBroadcast(snoozeIntent)
                 return START_NOT_STICKY
             }
             "ACTION_DISMISS" -> {
                 Log.d("AlarmService", "❌ Dismiss clicked")
-                // Dismiss implies solving challenge. So this should open the Activity just like clicking the notification body.
                 val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                     putExtra("ALARM_ID", alarmId)
                     putExtra("CHALLENGE_TYPE", challengeType)
                     putExtra("SHOW_ALARM_SCREEN", true)
+                    putExtra("START_CHALLENGE", true) // Signal to start challenge immediately
                 }
                 startActivity(fullScreenIntent)
-                // Service continues until challenge solved
-                return START_STICKY
+                return START_REDELIVER_INTENT
             }
         }
         
         Log.d("AlarmService", "🔔 Starting alarm service for: $alarmId")
         
-        // Start foreground immediately
         startForeground(NOTIFICATION_ID, createNotification(alarmId, challengeType))
-        
-        // Start ringing
         startRinging()
-        
-        // Start vibration
         startVibration()
         
-        // Launch full screen alarm activity
         val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             putExtra("ALARM_ID", alarmId)
             putExtra("CHALLENGE_TYPE", challengeType)
             putExtra("SHOW_ALARM_SCREEN", true)
@@ -101,9 +85,24 @@ class AlarmService : Service() {
         
         Log.d("AlarmService", "✅ MainActivity launched with alarm screen")
 
-        return START_STICKY
+        return START_REDELIVER_INTENT
     }
     
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.d("AlarmService", "⚠️ App Task Removed - Restarting Alarm Service UI")
+        
+        // If the user swipes the app away, we want to bring the alarm screen back!
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            // Ideally we should persist the current alarm ID to SharedPreferences to restore it fully,
+            // but if the Service is still running or restarting, `onStartCommand` might trigger.
+            // Using logic to recreate the Activity.
+             putExtra("SHOW_ALARM_SCREEN", true)
+        }
+        startActivity(intent)
+    }
+
     // ... (createNotificationChannel, startRinging, startVibration remain same) ...
 
     private fun createNotification(alarmId: String?, challengeType: String?): Notification {
@@ -121,7 +120,7 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Dismiss Action (Opens Activity to solve challenge)
+        // Dismiss Action 
         val dismissIntent = Intent(this, MainActivity::class.java).apply {
             action = "ACTION_DISMISS"
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -133,7 +132,7 @@ class AlarmService : Service() {
             this, 1, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Snooze Action (Broadcast to SnoozeReceiver)
+        // Snooze Action 
         val snoozeIntent = Intent(this, com.alarm.app.data.alarm.SnoozeReceiver::class.java).apply {
             action = "ACTION_SNOOZE"
             putExtra("ALARM_ID", alarmId)
@@ -149,12 +148,13 @@ class AlarmService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            // Use setFullScreenIntent to launch the activity immediately if device is locked
             .setFullScreenIntent(pendingIntent, true)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setAutoCancel(false)
-            .addAction(R.drawable.ic_launcher_foreground, "Snooze (5m)", snoozePendingIntent) // TODO: Use proper icon
-            .addAction(R.drawable.ic_launcher_foreground, "Dismiss", dismissPendingIntent) // TODO: Use proper icon
+            .addAction(R.drawable.ic_launcher_foreground, "Snooze (5m)", snoozePendingIntent) 
+            .addAction(R.drawable.ic_launcher_foreground, "Dismiss", dismissPendingIntent) 
             .build()
     }
     
