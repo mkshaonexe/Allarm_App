@@ -7,6 +7,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.PhoneAndroid // Added
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -112,7 +113,7 @@ fun ShakeChallenge(
         ) {
             // Icon or Graphic
             androidx.compose.material3.Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.Vibration, // Explicit import would be better but this works if available, otherwise Smartphone
+                imageVector = androidx.compose.material.icons.Icons.Default.PhoneAndroid, 
                 contentDescription = null,
                 tint = Color(0xFF26C6DA),
                 modifier = Modifier
