@@ -353,6 +353,8 @@ fun ChallengeOption(type: ChallengeType, isSelected: Boolean, onClick: () -> Uni
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 fun WheelPicker(
     count: Int,
     initialItem: Int,
@@ -366,19 +368,35 @@ fun WheelPicker(
         onItemSelected(pagerState.currentPage)
     }
 
+    // visibleItemsCount = 3 means 1 selected, 1 above, 1 below roughly
+    // We need to ensure the height effectively handles this.
+    // If ItemHeight is 60dp, and we want 3 items visible, total height should be ~180dp or constrained by parent.
+    // The parent Row/Box constrains it.
+    
     VerticalPager(
         state = pagerState,
-        modifier = modifier.height(150.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = modifier.height(180.dp), // 3 * 60dp
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 60.dp) // padding to allow first/last item in center
     ) { page ->
         val isSelected = page == pagerState.currentPage
-        Text(
-            text = format(page),
-            fontSize = if (isSelected) 32.sp else 24.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) Color.White else Color.Gray,
-            modifier = Modifier.alpha(if (isSelected) 1f else 0.5f)
-        )
+        
+        // Snap effect happens automatically with Pager
+        
+        Box(
+            modifier = Modifier
+                .height(60.dp) // Match the highlight box height
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = format(page),
+                fontSize = if (isSelected) 32.sp else 24.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = if (isSelected) Color.White else Color.Gray.copy(alpha = 0.5f),
+                modifier = Modifier.alpha(if (isSelected) 1f else 0.5f)
+            )
+        }
     }
 }
 
