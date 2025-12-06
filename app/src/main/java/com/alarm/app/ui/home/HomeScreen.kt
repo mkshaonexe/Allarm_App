@@ -79,7 +79,7 @@ fun HomeScreen(
         },
         bottomBar = {
             NavigationBar(
-                containerColor = Color(0xFF1C1C1E),
+                containerColor = Color(0xFF2C2C2E), // Lighter dark to separate from background
                 contentColor = Color.White
             ) {
                 val items = listOf("Alarm", "Sleep", "Morning", "Report", "Setting")
