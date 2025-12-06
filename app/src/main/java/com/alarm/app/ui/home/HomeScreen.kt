@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
@@ -269,13 +270,62 @@ fun AlarmCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Box {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = String.format("%02d:%02d", alarm.hour, alarm.minute),
-                        fontSize = 32.sp, // Reduced font size
-                        fontWeight = FontWeight.Bold,
-                        color = if (alarm.isEnabled) Color.White else Color.Gray
-                    )
+                Column {
+                    // Days of week header
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        val days = listOf("S", "M", "T", "W", "T", "F", "S")
+                        // 1 = Sunday in Java Calendar, mapping index 0->1, 1->2...
+                        days.forEachIndexed { index, day ->
+                            // Simple check: default to gray if empty set, or highlight if in set.
+                            // Assuming Calendar constants: SUNDAY=1, SATURDAY=7.
+                            // Local days list index 0 is Sunday (1).
+                            val dayId = index + 1
+                            val isActive = alarm.daysOfWeek.contains(dayId)
+                            Text(
+                                text = day,
+                                fontSize = 10.sp,
+                                color = if (isActive && alarm.isEnabled) Color.White else Color.Gray.copy(alpha = 0.5f),
+                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+
+                    // Time and Mission Icon Row
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        val hour = if (alarm.hour > 12) alarm.hour - 12 else if (alarm.hour == 0) 12 else alarm.hour
+                        val minuteStr = String.format("%02d", alarm.minute)
+                        val amPm = if (alarm.hour >= 12) "PM" else "AM"
+                        
+                        Text(
+                            text = "$hour:$minuteStr",
+                            fontSize = 38.sp, // Slightly larger for emphasis
+                            fontWeight = FontWeight.Normal,
+                            color = if (alarm.isEnabled) Color.White else Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = amPm,
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                            color = if (alarm.isEnabled) Color.White else Color.Gray
+                        )
+                        
+                        // Mission Icon
+                        if (alarm.challengeType != com.alarm.app.data.model.ChallengeType.NONE) {
+                             Spacer(modifier = Modifier.width(8.dp))
+                             Icon(
+                                 imageVector = Icons.Default.Extension, // Placeholder for mission icon
+                                 contentDescription = "Mission",
+                                 tint = if (alarm.isEnabled) Color.White.copy(alpha = 0.7f) else Color.Gray,
+                                 modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(bottom = 6.dp)
+                             )
+                        }
+                    }
                 }
             }
 
