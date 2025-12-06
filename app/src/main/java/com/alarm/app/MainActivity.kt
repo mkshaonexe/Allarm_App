@@ -184,13 +184,42 @@ class MainActivity : ComponentActivity() {
                         val alarmId = backStackEntry.arguments?.getString("alarmId")
                         com.alarm.app.ui.alarm.AlarmScreen(navController = navController, alarmId = alarmId)
                     }
-                    composable("ringing") {
-                        // Pass parameters to the ringing screen
+                    composable(
+                        route = "ringing?alarmId={alarmId}&challenge={challenge}&startImmediate={startImmediate}&isPreview={isPreview}",
+                        arguments = listOf(
+                            androidx.navigation.navArgument("alarmId") { type = androidx.navigation.NavType.StringType; nullable = true },
+                            androidx.navigation.navArgument("challenge") { type = androidx.navigation.NavType.StringType; nullable = true },
+                            androidx.navigation.navArgument("startImmediate") { type = androidx.navigation.NavType.BoolType; defaultValue = false },
+                            androidx.navigation.navArgument("isPreview") { type = androidx.navigation.NavType.BoolType; defaultValue = false }
+                        )
+                    ) { backStackEntry ->
+                        // Arguments from Navigation (for Preview)
+                        val navAlarmId = backStackEntry.arguments?.getString("alarmId")
+                        val navChallenge = backStackEntry.arguments?.getString("challenge")
+                        val navStartImmediate = backStackEntry.arguments?.getBoolean("startImmediate") ?: false
+                        val navIsPreview = backStackEntry.arguments?.getBoolean("isPreview") ?: false
+
+                        // Arguments from Intent (for Real Alarm) - prioritized if Nav args are defaults/null and not preview
+                        // actually if we are navigating internally for preview, nav args will be set.
+                        // if we are starting via intent, we used startDestination logic which doesn't pass args to the route string directly unless we constructed it.
+                        // BUT, the startDestination string was just "ringing".
+                        // So we need to handle both cases.
+                        
+                        // If it's a preview, use nav args.
+                        // If it's a real alarm (via intent params), we might need to rely on the intent extras if the route was just "ringing"
+                        // However, since we defined arguments with default values, "ringing" will match but have nulls/defaults.
+                        
+                        val finalAlarmId = if (navIsPreview) navAlarmId else ringingParams.first
+                        val finalChallenge = if (navIsPreview) navChallenge else ringingParams.second
+                        val finalStartImmediate = if (navIsPreview) navStartImmediate else ringingParams.third
+                        val finalIsPreview = navIsPreview
+
                         com.alarm.app.ui.ring.AlarmRingingScreen(
                             navController = navController,
-                            alarmId = ringingParams.first,
-                            initialChallengeTypeStr = ringingParams.second,
-                            startChallengeImmediately = ringingParams.third
+                            alarmId = finalAlarmId,
+                            initialChallengeTypeStr = finalChallenge,
+                            startChallengeImmediately = finalStartImmediate,
+                            isPreview = finalIsPreview
                         )
                     }
                 }

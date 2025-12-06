@@ -45,6 +45,9 @@ import com.alarm.app.R
 import com.alarm.app.data.alarm.AlarmService
 import com.alarm.app.data.alarm.SnoozeReceiver
 import com.alarm.app.data.model.ChallengeType
+import androidx.compose.material3.IconButton // Added
+import androidx.compose.material.icons.Icons // Added for convenience if needed, but specific is better
+import androidx.compose.material.icons.filled.Close // Added
 import java.util.Calendar
 
 @Composable
@@ -52,7 +55,8 @@ fun AlarmRingingScreen(
     navController: NavController,
     alarmId: String? = null,
     initialChallengeTypeStr: String? = null,
-    startChallengeImmediately: Boolean = false
+    startChallengeImmediately: Boolean = false,
+    isPreview: Boolean = false
 ) {
     val context = LocalContext.current
     var isChallengeActive by remember { mutableStateOf(startChallengeImmediately) }
@@ -60,6 +64,10 @@ fun AlarmRingingScreen(
     // Block Back Button to prevent accidental closing
     androidx.activity.compose.BackHandler(enabled = true) {
         // Do nothing. User must Dismiss or Snooze.
+        // except in preview mode
+        if (isPreview) {
+            navController.popBackStack()
+        }
     }
     
     // Parse the challenge type
@@ -71,30 +79,43 @@ fun AlarmRingingScreen(
     
     // Function to stop alarm and navigate home (called AFTER challenge success)
     val finishAlarm: () -> Unit = {
-        context.stopService(Intent(context, AlarmService::class.java))
-        navController.navigate("home") { 
-            popUpTo("ringing") { inclusive = true } 
+        if (!isPreview) {
+            context.stopService(Intent(context, AlarmService::class.java))
+            navController.navigate("home") { 
+                popUpTo("ringing") { inclusive = true } 
+            }
+        } else {
+            navController.popBackStack()
         }
     }
     
     // Function to snooze
     val snoozeAlarm: () -> Unit = {
-        if (alarmId != null) {
-            val intent = Intent(context, SnoozeReceiver::class.java).apply {
-                action = "ACTION_SNOOZE"
-                putExtra("ALARM_ID", alarmId)
+        if (!isPreview) {
+            if (alarmId != null) {
+                val intent = Intent(context, SnoozeReceiver::class.java).apply {
+                    action = "ACTION_SNOOZE"
+                    putExtra("ALARM_ID", alarmId)
+                }
+                context.sendBroadcast(intent)
+            } else {
+                // For testing without ID -> just stop service
+                context.stopService(Intent(context, AlarmService::class.java))
             }
-            context.sendBroadcast(intent)
+            navController.navigate("home") { 
+                 popUpTo("ringing") { inclusive = true } 
+            }
         } else {
-            // For preview/testing without ID -> just stop service
-            context.stopService(Intent(context, AlarmService::class.java))
-        }
-        navController.navigate("home") { 
-             popUpTo("ringing") { inclusive = true } 
+             navController.popBackStack()
         }
     }
     
-    if (isChallengeActive && challengeType != ChallengeType.NONE) {
+    if (isChallengeActive && challengeType != ChallengeType.NONE && !isPreview) {
+        // SHOW CHALLENGE ONLY IF NOT PREVIEW OR IF PREVIEW HANDLES IT DIFFERENTLY?
+        // User wants to preview the mission too. "what will lok like when the alrm full trail integrate shere liek no mission challage select"
+        // "if any tmath type sake qr it shodul done then the proveow off"
+        // So yes, we show challenge in preview too.
+        
         // Show the specific challenge UI
         when (challengeType) {
             ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(onCompleted = finishAlarm)
@@ -103,6 +124,35 @@ fun AlarmRingingScreen(
             ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(onCompleted = finishAlarm)
             else -> finishAlarm() 
         }
+    } else if (isChallengeActive && challengeType != ChallengeType.NONE && isPreview) {
+         // Previewing the challenge
+         // We wrap it in a Box to add the Close button on top if needed? 
+         // "in preview here add in the rop righe side the lcos buttion"
+         Box(modifier = Modifier.fillMaxSize()) {
+            when (challengeType) {
+                ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(onCompleted = finishAlarm)
+                ChallengeType.SHAKE -> com.alarm.app.ui.ring.challenges.ShakeChallenge(onCompleted = finishAlarm)
+                ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(onCompleted = finishAlarm)
+                ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(onCompleted = finishAlarm)
+                else -> finishAlarm()
+            }
+            
+            // Close Button Overlay for Preview
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .padding(top = 24.dp) // Status bar padding roughly
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                    contentDescription = "Close Preview",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+         }
     } else {
         // Main Ringing UI (Moon Theme)
         Box(
@@ -219,6 +269,24 @@ fun AlarmRingingScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text("Dismiss", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+            
+            // Close Button for Preview (Main Screen)
+            if (isPreview) {
+                 IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .padding(top = 24.dp)
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                        contentDescription = "Close Preview",
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
             }
         }

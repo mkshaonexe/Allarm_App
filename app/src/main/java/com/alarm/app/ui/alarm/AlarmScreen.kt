@@ -312,17 +312,44 @@ fun AlarmScreen(
             
             Spacer(modifier = Modifier.weight(1f))
             
-            // Save Button
-            Button(
-                onClick = {
-                    viewModel.addAlarm(selectedHour, selectedMinute, selectedChallenge)
-                    navController.popBackStack()
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().height(56.dp)
+            // Save Button & Preview Button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Save", fontSize = 18.sp, color = Color.White)
+                 // Preview Button
+                Button(
+                    onClick = {
+                        // Navigate to preview
+                        navController.navigate(
+                            "ringing?isPreview=true&challenge=${selectedChallenge.name}&startImmediate=false"
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C2C2E)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                ) {
+                    Text("Preview", fontSize = 18.sp, color = Color.White)
+                }
+
+                // Save Button
+                Button(
+                    onClick = {
+                        viewModel.addAlarm(selectedHour, selectedMinute, selectedChallenge)
+                        navController.popBackStack()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                ) {
+                    Text("Save", fontSize = 18.sp, color = Color.White)
+                }
             }
         }
     }
