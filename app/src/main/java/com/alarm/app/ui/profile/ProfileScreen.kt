@@ -68,32 +68,27 @@ fun ProfileScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // 1. Avatar Section (Full Width)
-            item(span = { GridItemSpan(2) }) {
-                AvatarSection()
-            }
-
-            // 2. Radar Chart (Stats)
+            // 1. Radar Chart (Stats)
             item {
                 RadarStatCard()
             }
 
-            // 3. Skill Points
+            // 2. Skill Points
             item {
                SkillPointsCard()
             }
 
-            // 4. Bar Chart
+            // 3. Bar Chart
             item {
                 ActivityBarChartCard()
             }
 
-            // 5. XP / Goal
+            // 4. XP / Goal
             item {
                 XPCard()
             }
 
-            // 6. Contribution Graph (Full Width)
+            // 5. Contribution Graph (Full Width)
             item(span = { GridItemSpan(2) }) {
                 ContributionGraphCard()
             }
