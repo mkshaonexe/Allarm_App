@@ -13,9 +13,13 @@ object AppViewModelProvider {
             val repository = application.container.alarmRepository
             val scheduler = application.container.alarmScheduler
             
+            val settingsRepository = application.container.settingsRepository
+            
             return when {
                 modelClass.isAssignableFrom(AlarmViewModel::class.java) -> 
                     AlarmViewModel(repository, scheduler) as T
+                modelClass.isAssignableFrom(com.alarm.app.ui.onboarding.OnboardingViewModel::class.java) ->
+                    com.alarm.app.ui.onboarding.OnboardingViewModel(repository, scheduler, settingsRepository) as T
                 else -> throw IllegalArgumentException("Unknown ViewModel class")
             }
         }

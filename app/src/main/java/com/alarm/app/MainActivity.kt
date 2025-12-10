@@ -123,8 +123,13 @@ class MainActivity : ComponentActivity() {
                 // Let's stick to the logic: If we don't have overlay permission, that's the "blocking" screen.
                 // Notification permission is asked via system dialog on top of whatever screen we are on.
                 
+                val settingsRepository = (application as com.alarm.app.AlarmApplication).container.settingsRepository
+                val isFirstRun = remember { settingsRepository.isFirstRun() }
+
                 val startDestination = if (isRinging) {
                     "ringing"
+                } else if (isFirstRun) {
+                    "onboarding"
                 } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M && 
                            !android.provider.Settings.canDrawOverlays(context)) { 
                            // Use raw check for initial state to avoid race condition with state var
@@ -177,6 +182,70 @@ class MainActivity : ComponentActivity() {
                      // Lifecycle observer to re-check permission on resume could be useful here, but simple button/nav works for now.
                      // A cleaner way is to use `LifecycleEventObserver` to check permission on `ON_RESUME`.
                      
+                    androidx.navigation.navigation(startDestination = "welcome", route = "onboarding") {
+                         composable("welcome") {
+                             com.alarm.app.ui.onboarding.WelcomeScreen(
+                                 onNext = { navController.navigate("time") }
+                             )
+                         }
+                         composable("time") { backStackEntry ->
+                             val parentEntry = remember(backStackEntry) { 
+                                 navController.getBackStackEntry("onboarding") 
+                             }
+                             val onboardingViewModel: com.alarm.app.ui.onboarding.OnboardingViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                                 viewModelStoreOwner = parentEntry,
+                                 factory = AppViewModelProvider.Factory
+                             )
+                             com.alarm.app.ui.onboarding.OnboardingTimeScreen(
+                                 viewModel = onboardingViewModel,
+                                 onNext = { navController.navigate("sound") }
+                             )
+                         }
+                         composable("sound") { backStackEntry ->
+                             val parentEntry = remember(backStackEntry) { 
+                                 navController.getBackStackEntry("onboarding") 
+                             }
+                             val onboardingViewModel: com.alarm.app.ui.onboarding.OnboardingViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                                 viewModelStoreOwner = parentEntry,
+                                 factory = AppViewModelProvider.Factory
+                             )
+                             com.alarm.app.ui.onboarding.OnboardingSoundScreen(
+                                 viewModel = onboardingViewModel,
+                                 onNext = { navController.navigate("mission") }
+                             )
+                         }
+                         composable("mission") { backStackEntry ->
+                             val parentEntry = remember(backStackEntry) { 
+                                 navController.getBackStackEntry("onboarding") 
+                             }
+                             val onboardingViewModel: com.alarm.app.ui.onboarding.OnboardingViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                                 viewModelStoreOwner = parentEntry,
+                                 factory = AppViewModelProvider.Factory
+                             )
+                             com.alarm.app.ui.onboarding.OnboardingMissionScreen(
+                                 viewModel = onboardingViewModel,
+                                 onNext = { navController.navigate("setup") }
+                             )
+                         }
+                         composable("setup") { backStackEntry ->
+                             val parentEntry = remember(backStackEntry) { 
+                                 navController.getBackStackEntry("onboarding") 
+                             }
+                             val onboardingViewModel: com.alarm.app.ui.onboarding.OnboardingViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                                 viewModelStoreOwner = parentEntry,
+                                 factory = AppViewModelProvider.Factory
+                             )
+                             com.alarm.app.ui.onboarding.OnboardingSetupScreen(
+                                 viewModel = onboardingViewModel,
+                                 onComplete = {
+                                     navController.navigate("home") {
+                                         popUpTo("onboarding") { inclusive = true }
+                                     }
+                                 }
+                             )
+                         }
+                    }
+
                     composable("create_alarm") {
                         com.alarm.app.ui.alarm.AlarmScreen(navController = navController)
                     }

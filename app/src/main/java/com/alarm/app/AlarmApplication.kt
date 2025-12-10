@@ -20,6 +20,7 @@ class AlarmApplication : Application() {
 interface AppContainer {
     val alarmRepository: AlarmRepository
     val alarmScheduler: AlarmScheduler
+    val settingsRepository: SettingsRepository
 }
 
 class AppDefaultContainer(private val context: Context) : AppContainer {
@@ -28,6 +29,9 @@ class AppDefaultContainer(private val context: Context) : AppContainer {
     }
     override val alarmScheduler: AlarmScheduler by lazy {
         AndroidAlarmScheduler(context)
+    }
+    override val settingsRepository: SettingsRepository by lazy {
+        com.alarm.app.data.repository.SharedPreferencesSettingsRepository(context)
     }
 }
 
