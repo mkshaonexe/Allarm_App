@@ -184,7 +184,7 @@ class MainActivity : ComponentActivity() {
                      // Lifecycle observer to re-check permission on resume could be useful here, but simple button/nav works for now.
                      // A cleaner way is to use `LifecycleEventObserver` to check permission on `ON_RESUME`.
                      
-                    androidx.navigation.navigation(startDestination = "welcome", route = "onboarding") {
+                     navigation(startDestination = "welcome", route = "onboarding") {
                          composable("welcome") {
                              com.alarm.app.ui.onboarding.WelcomeScreen(
                                  onNext = { navController.navigate("time") }
