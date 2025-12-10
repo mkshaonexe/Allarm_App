@@ -20,9 +20,16 @@ class AlarmViewModel(
 
     val allAlarms: StateFlow<List<Alarm>> = repository.getAllAlarms()
         .map { alarms ->
+            val now = java.util.Calendar.getInstance()
+            val currentMinutes = now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE)
+            
             alarms.sortedWith(
                 compareByDescending<Alarm> { it.isEnabled }
-                    .thenBy { it.hour * 60 + it.minute }
+                    .thenBy { alarm ->
+                        val alarmMinutes = alarm.hour * 60 + alarm.minute
+                        // If alarm time is earlier than now, it's for tomorrow (+24h)
+                        if (alarmMinutes < currentMinutes) alarmMinutes + 24 * 60 else alarmMinutes
+                    }
             )
         }
         .stateIn(
