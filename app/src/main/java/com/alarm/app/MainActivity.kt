@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
         }
 
         enableEdgeToEdge()
+        // Force light status bar icons (visible on dark background)
+        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
         setContent {
             AllarmAppTheme {
                 val navController = rememberNavController()
