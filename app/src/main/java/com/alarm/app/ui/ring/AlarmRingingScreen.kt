@@ -59,24 +59,12 @@ fun AlarmRingingScreen(
     isPreview: Boolean = false
 ) {
     val context = LocalContext.current
-    var isChallengeActive by remember { mutableStateOf(startChallengeImmediately) }
-    
-    // Block Back Button to prevent accidental closing
-    androidx.activity.compose.BackHandler(enabled = true) {
-        // Do nothing. User must Dismiss or Snooze.
-        // except in preview mode
-        if (isPreview) {
-            navController.popBackStack()
-        }
-    }
     
     // Parse the challenge type
     val challengeType = try {
         if (initialChallengeTypeStr != null) ChallengeType.valueOf(initialChallengeTypeStr) else ChallengeType.NONE
     } catch (e: Exception) { ChallengeType.NONE }
-    
-    val currentTime = Calendar.getInstance()
-    
+
     // Function to stop alarm and navigate home (called AFTER challenge success)
     val finishAlarm: () -> Unit = {
         if (!isPreview) {
@@ -99,7 +87,6 @@ fun AlarmRingingScreen(
                 }
                 context.sendBroadcast(intent)
             } else {
-                // For testing without ID -> just stop service
                 context.stopService(Intent(context, AlarmService::class.java))
             }
             navController.navigate("home") { 
@@ -109,41 +96,67 @@ fun AlarmRingingScreen(
              navController.popBackStack()
         }
     }
+
+    // Call the content wrapper
+    AlarmRingingContent(
+        challengeType = challengeType,
+        startChallengeImmediately = startChallengeImmediately,
+        isPreview = isPreview,
+        onSnooze = snoozeAlarm,
+        onDismiss = finishAlarm, // This is final dismiss or post-challenge
+        onClosePreview = { navController.popBackStack() }
+    )
+}
+
+@Composable
+fun AlarmRingingContent(
+    challengeType: ChallengeType,
+    startChallengeImmediately: Boolean,
+    isPreview: Boolean,
+    onSnooze: () -> Unit,
+    onDismiss: () -> Unit,
+    onClosePreview: () -> Unit
+) {
+    var isChallengeActive by remember { mutableStateOf(startChallengeImmediately) }
+    
+    // Block Back Button to prevent accidental closing
+    androidx.activity.compose.BackHandler(enabled = true) {
+        // Do nothing. User must Dismiss or Snooze.
+        // except in preview mode
+        if (isPreview) {
+            onClosePreview()
+        }
+    }
+    
+    val currentTime = Calendar.getInstance()
     
     if (isChallengeActive && challengeType != ChallengeType.NONE && !isPreview) {
-        // SHOW CHALLENGE ONLY IF NOT PREVIEW OR IF PREVIEW HANDLES IT DIFFERENTLY?
-        // User wants to preview the mission too. "what will lok like when the alrm full trail integrate shere liek no mission challage select"
-        // "if any tmath type sake qr it shodul done then the proveow off"
-        // So yes, we show challenge in preview too.
-        
         // Show the specific challenge UI
         when (challengeType) {
-            ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(onCompleted = finishAlarm)
-            ChallengeType.SHAKE -> com.alarm.app.ui.ring.challenges.ShakeChallenge(onCompleted = finishAlarm)
-            ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(onCompleted = finishAlarm)
-            ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(onCompleted = finishAlarm)
-            else -> finishAlarm() 
+            ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(onCompleted = onDismiss)
+            ChallengeType.SHAKE -> com.alarm.app.ui.ring.challenges.ShakeChallenge(onCompleted = onDismiss)
+            ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(onCompleted = onDismiss)
+            ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(onCompleted = onDismiss)
+            else -> onDismiss() 
         }
     } else if (isChallengeActive && challengeType != ChallengeType.NONE && isPreview) {
          // Previewing the challenge
-         // We wrap it in a Box to add the Close button on top if needed? 
-         // "in preview here add in the rop righe side the lcos buttion"
          Box(modifier = Modifier.fillMaxSize()) {
             when (challengeType) {
-                ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(onCompleted = finishAlarm)
-                ChallengeType.SHAKE -> com.alarm.app.ui.ring.challenges.ShakeChallenge(onCompleted = finishAlarm)
-                ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(onCompleted = finishAlarm)
-                ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(onCompleted = finishAlarm)
-                else -> finishAlarm()
+                ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(onCompleted = onDismiss)
+                ChallengeType.SHAKE -> com.alarm.app.ui.ring.challenges.ShakeChallenge(onCompleted = onDismiss)
+                ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(onCompleted = onDismiss)
+                ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(onCompleted = onDismiss)
+                else -> onDismiss()
             }
             
             // Close Button Overlay for Preview
             IconButton(
-                onClick = { navController.popBackStack() },
+                onClick = onClosePreview,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
-                    .padding(top = 24.dp) // Status bar padding roughly
+                    .padding(top = 24.dp) 
             ) {
                 Icon(
                     imageVector = androidx.compose.material.icons.Icons.Default.Close,
@@ -223,7 +236,7 @@ fun AlarmRingingScreen(
                     
                     // Snooze Button Floating Over Moon (Bottom)
                     Surface(
-                        onClick = snoozeAlarm,
+                        onClick = onSnooze,
                         shape = RoundedCornerShape(percent = 50),
                         color = Color.White,
                         modifier = Modifier
@@ -256,7 +269,7 @@ fun AlarmRingingScreen(
                 Button(
                     onClick = {
                         if (challengeType == ChallengeType.NONE) {
-                            finishAlarm()
+                            onDismiss()
                         } else {
                             isChallengeActive = true
                         }
@@ -275,7 +288,7 @@ fun AlarmRingingScreen(
             // Close Button for Preview (Main Screen)
             if (isPreview) {
                  IconButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = onClosePreview,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(16.dp)

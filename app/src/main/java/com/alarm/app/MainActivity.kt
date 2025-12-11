@@ -325,6 +325,38 @@ class MainActivity : ComponentActivity() {
         intentState = intent
         android.util.Log.d("MainActivity", "🔔 onNewIntent - updated intentState")
     }
+    
+    // Prevent user from leaving the app when alarm is ringing
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        val currentIntent = intentState ?: intent
+        if (currentIntent?.getBooleanExtra("SHOW_ALARM_SCREEN", false) == true) {
+            android.util.Log.d("MainActivity", "🚫 User tried to leave while alarm is ringing! Bringing back...")
+             val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                putExtra("SHOW_ALARM_SCREEN", true) 
+                // Restore other extras
+                putExtra("ALARM_ID", currentIntent.getStringExtra("ALARM_ID"))
+                putExtra("CHALLENGE_TYPE", currentIntent.getStringExtra("CHALLENGE_TYPE"))
+            }
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    // Also try to catch pause if not finishing
+    override fun onPause() {
+        super.onPause()
+        /* 
+           Note: onPause is called when screen turns off too. We shouldn't relaunch if screen is just off.
+           But if user is minimizing, it's problematic. 
+           However, starting activity from onPause is often blocked.
+           onUserLeaveHint is the standard place for Home button detection.
+        */
+    }
 
     private fun determineStartDestination(intent: Intent?): String {
         return if (intent?.getBooleanExtra("SHOW_ALARM_SCREEN", false) == true) {
