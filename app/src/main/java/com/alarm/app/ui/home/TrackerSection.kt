@@ -1,141 +1,209 @@
 package com.alarm.app.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.*
 import kotlin.random.Random
+
+// Constants for pixel-perfect alignment
+private val SQUARE_SIZE = 10.dp
+private val GRID_SPACING = 4.dp
+private val MONTH_LABEL_HEIGHT = 16.dp
 
 @Composable
 fun TrackerSection() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Black) 
-            .padding(vertical = 12.dp)
+            .background(Color.Black)
+            .padding(vertical = 16.dp, horizontal = 16.dp)
     ) {
-        HeatmapGrid()
+        ContributionHeatmap()
     }
 }
 
 @Composable
-fun HeatmapGrid() {
-    val rows = 24 // 24 Hours
-    val startHour = 4
+fun ContributionHeatmap() {
+    // 1. Generate Dummy Data (Last 20 Weeks)
+    val weeksData = remember { generateHeatmapData(20) }
     
-    // Data Generation (Dec to April)
-    val monthsData = listOf(
-        "Dec" to 31,
-        "Jan" to 31,
-        "Feb" to 28,
-        "Mar" to 31,
-        "Apr" to 30
-    )
+    // 2. Layout
+    Row(modifier = Modifier.fillMaxWidth()) {
+        // Left Column: Day Labels (Mon, Wed, Fri)
+        // We add top padding to align with the Grid (skipping Month Label height)
+        Column(modifier = Modifier.padding(top = MONTH_LABEL_HEIGHT + GRID_SPACING)) {
+            DayLabels()
+        }
 
-    // Outer Container with FIXED height that allows Vertical Scrolling
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(160.dp) // Fixed height window
-            .verticalScroll(androidx.compose.foundation.rememberScrollState())
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Right Column: Month Labels + Grid
+        Column(modifier = Modifier.weight(1f)) {
+            MonthLabels(weeksData)
+            Spacer(modifier = Modifier.height(GRID_SPACING))
+            HeatmapGrid(weeksData)
+        }
+    }
+}
+
+@Composable
+fun DayLabels() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(GRID_SPACING)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp)
-        ) {
-            // Fixed Y-Axis (Hours) - Scolls with the grid
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp), // Match grid spacing
-                modifier = Modifier
-                    .padding(top = 16.dp, end = 20.dp) // Top: 16dp matches Month Label height. End: More space.
+        // 7 Rows (Sun, Mon, Tue, Wed, Thu, Fri, Sat)
+        // Labels on indices: 1 (Mon), 3 (Wed), 5 (Fri)
+        repeat(7) { index ->
+            Box(
+                modifier = Modifier.height(SQUARE_SIZE),
+                contentAlignment = Alignment.CenterEnd
             ) {
-                repeat(rows) { i ->
-                    val hour = (startHour + i) % 24
-                    Box(
-                        modifier = Modifier.height(10.dp), // Match dot height
-                        contentAlignment = androidx.compose.ui.Alignment.CenterEnd
-                    ) {
-                         Text(
-                            text = hour.toString(), 
-                            color = Color.White, // Improved clarity
-                            fontSize = 11.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
-                        )
+                if (index == 1 || index == 3 || index == 5) {
+                    val label = when(index) {
+                        1 -> "Mon"
+                        3 -> "Wed"
+                        5 -> "Fri"
+                        else -> ""
                     }
-                }
-            }
-
-            // Scrollable Grid (X-Axis) - Horizontally scrollable
-            // Note: Horizontal Scroll inside Vertical Scroll implies diagonal scrolling capability or blocking.
-            // Since LazyRow handles horizontal, parent Column handles vertical.
-            androidx.compose.foundation.lazy.LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                monthsData.forEach { (monthName, days) ->
-                    items(days) { dayIndex ->
-                        val day = dayIndex + 1
-                        Column(
-                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            // Month Label
-                            Box(modifier = Modifier.height(16.dp)) {
-                                if (day == 1) {
-                                    Text(
-                                        text = monthName,
-                                        color = Color.Gray,
-                                        fontSize = 10.sp,
-                                        modifier = Modifier.width(40.dp)
-                                    )
-                                }
-                            }
-
-                            // The vertical dots for this day (24 rows)
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                repeat(rows) { rowIndex ->
-                                    val isActive = remember(monthName, day, rowIndex) { 
-                                        Random.nextFloat() > 0.85 // Sparser data for 24h
-                                    }
-                                    val activeColor = Color(0xFF26C6DA) 
-                                    val inactiveColor = Color(0xFF1C1C1E)
-
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .clip(RoundedCornerShape(2.dp))
-                                            .background(if (isActive) activeColor else inactiveColor)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    item {
-                        Spacer(modifier = Modifier.width(12.dp))
-                    }
+                    Text(
+                        text = label, 
+                        color = Color.Gray, 
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(end = 4.dp) // Gap between Label And Grid
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MonthLabels(weeks: List<WeekData>) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(GRID_SPACING)
+    ) {
+        weeks.forEach { week ->
+            Box(
+                modifier = Modifier.width(SQUARE_SIZE)
+            ) {
+                if (week.isNewMonth) {
+                    // Allow text to overflow the 10dp box
+                    Text(
+                        text = week.monthName,
+                        color = Color.Gray,
+                        fontSize = 10.sp,
+                        softWrap = false,
+                        modifier = Modifier.requiredWidth(40.dp) // Ensure it draws fully
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HeatmapGrid(weeks: List<WeekData>) {
+    // Use Row instead of LazyRow to ensure strict alignment with MonthLabels in this fixed window
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(GRID_SPACING),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        weeks.forEach { week ->
+            Column(
+                verticalArrangement = Arrangement.spacedBy(GRID_SPACING)
+            ) {
+                week.days.forEach { level ->
+                    HeatmapSquare(level)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HeatmapSquare(level: Int) { // level 0..4 (0=Empty, 4=Max)
+    val color = when (level) {
+        0 -> Color(0xFF161B22) // GitHub dark empty
+        1 -> Color(0xFF0E4429)
+        2 -> Color(0xFF006D32)
+        3 -> Color(0xFF26A641)
+        4 -> Color(0xFF39D353) // Max bright green
+        else -> Color(0xFF161B22)
+    }
+
+    Box(
+        modifier = Modifier
+            .size(SQUARE_SIZE)
+            .clip(RoundedCornerShape(2.dp))
+            .background(color)
+    )
+}
+
+// --- Data Models & Helpers ---
+
+data class WeekData(
+    val monthName: String,
+    val isNewMonth: Boolean,
+    val days: List<Int> // 7 ints representing activity level 0-4
+)
+
+fun generateHeatmapData(numWeeks: Int): List<WeekData> {
+    val weeks = mutableListOf<WeekData>()
+    val cal = Calendar.getInstance()
+    
+    // Go back 'numWeeks'
+    cal.add(Calendar.WEEK_OF_YEAR, -numWeeks)
+    
+    var lastMonth = -1
+
+    repeat(numWeeks) {
+        val days = mutableListOf<Int>()
+        repeat(7) {
+            // Random activity
+            val r = Random.nextFloat()
+            val level = if (r > 0.7) Random.nextInt(1, 5) else 0
+            days.add(level)
+        }
+        
+        val currentMonth = cal.get(Calendar.MONTH)
+        val monthName = if (currentMonth != lastMonth) getMonthName(currentMonth) else ""
+        // Only show label if it's the first week of the month AND not the very first column (looks cleaner usually)
+        // OR just whenever month changes
+        val isNewMonth = currentMonth != lastMonth
+        
+        weeks.add(WeekData(monthName, isNewMonth, days))
+        
+        lastMonth = currentMonth
+        cal.add(Calendar.WEEK_OF_YEAR, 1)
+    }
+    return weeks
+}
+
+fun getMonthName(month: Int): String {
+    return when(month) {
+        Calendar.JANUARY -> "Jan"
+        Calendar.FEBRUARY -> "Feb"
+        Calendar.MARCH -> "Mar"
+        Calendar.APRIL -> "Apr"
+        Calendar.MAY -> "May"
+        Calendar.JUNE -> "Jun"
+        Calendar.JULY -> "Jul"
+        Calendar.AUGUST -> "Aug"
+        Calendar.SEPTEMBER -> "Sep"
+        Calendar.OCTOBER -> "Oct"
+        Calendar.NOVEMBER -> "Nov"
+        Calendar.DECEMBER -> "Dec"
+        else -> ""
     }
 }
