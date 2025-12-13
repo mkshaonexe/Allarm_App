@@ -34,8 +34,8 @@ fun TrackerSection() {
 
 @Composable
 fun ContributionHeatmap() {
-    // 1. Generate Dummy Data (Last 20 Weeks)
-    val weeksData = remember { generateHeatmapData(20) }
+    // 1. Generate Dummy Data (Last 26 Weeks -> approx 6 months)
+    val weeksData = remember { generateHeatmapData(26) }
     
     // 2. Layout
     Row(modifier = Modifier.fillMaxWidth()) {
@@ -101,11 +101,11 @@ fun MonthLabels(weeks: List<WeekData>) {
             Box(
                 modifier = Modifier.width(SQUARE_SIZE)
             ) {
-                if (week.isNewMonth) {
+                if (week.isNewMonth || (weeks.indexOf(week) == 0 && week.monthName.isNotEmpty())) {
                     // Allow text to overflow the 10dp box
                     Text(
                         text = week.monthName,
-                        color = Color.Gray,
+                        color = Color(0xFFC9D1D9), // Brighter GitHub-like text color
                         fontSize = 10.sp,
                         softWrap = false,
                         modifier = Modifier.requiredWidth(40.dp) // Ensure it draws fully
