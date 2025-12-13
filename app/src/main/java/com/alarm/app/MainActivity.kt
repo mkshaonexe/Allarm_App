@@ -25,6 +25,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.runtime.DisposableEffect
 import com.alarm.app.ui.AppViewModelProvider
 import androidx.navigation.compose.navigation
+import com.alarm.app.ui.menu.MenuScreen
 
 @OptIn(ExperimentalPermissionsApi::class)
 class MainActivity : ComponentActivity() {
@@ -157,6 +158,9 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = startDestination) {
                     composable("home") {
                         HomeScreen(navController = navController)
+                    }
+                    composable("settings_menu") {
+                        MenuScreen(navController = navController)
                     }
                     composable("profile") {
                         com.alarm.app.ui.profile.ProfileScreen(navController = navController)

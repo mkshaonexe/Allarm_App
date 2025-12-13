@@ -87,6 +87,7 @@ import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.alarm.app.data.model.ChallengeType
 
@@ -123,6 +124,15 @@ fun HomeScreen(
                 // Profile has its own TopBar.
                 if (selectedTab == 0) {
                     TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = { navController.navigate("settings_menu") }) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = "Menu",
+                                    tint = Color.White
+                                )
+                            }
+                        },
                         title = { 
                             Text(
                                 "AuraWake", 
