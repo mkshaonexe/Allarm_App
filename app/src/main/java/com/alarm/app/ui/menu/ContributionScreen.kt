@@ -36,35 +36,8 @@ fun ContributionScreen(navController: NavController) {
     val context = LocalContext.current
     var showInfoDialog by remember { mutableStateOf(false) }
 
-    // Sample Data
-    val contributors = listOf(
-        Contributor(
-            name = "Saimon Islam",
-            date = "December 3, 2025",
-            description = "\"While playing music and scrolling Facebook, the muted video keeps muting and unmuting.\""
-        ),
-        Contributor(
-            name = "Nusrat Zerin",
-            date = "December 7, 2025",
-            description = "\"Acca Pinterest keno chalano jai na jokon social sentry on thake\""
-        ),
-        Contributor(
-            name = "Sadia Akter",
-            date = "11 dec 4:41 PM",
-            description = "\"Assalamu Alaikum Wa Rahmatullah bhaiya kon settings ta off krle ami cls krte bhalo bhabe ektu por por reminder dicche ete kinda disturb feel hoy.\""
-        ),
-        Contributor(
-            name = "MD Tarek",
-            date = "Dec 10, 2025, 9:53 PM",
-            description = "\"To do list e kunu task likle ta pore abr ager moto Hoye jay Ami jerokom schedule Kore task banai Oita abr bodole jay keno\""
-        ),
-        Contributor(
-            name = "Khan Istiak Shahabuddin",
-            role = "(HTT Engineer, SQA)",
-            date = "Dec 10, 2025, 2:29 PM",
-            description = "\"Swipe-back gesture should navigate to the previous page within the app, not exit the app.\""
-        )
-    )
+    // Sample Data (Currently Empty)
+    val contributors = listOf<Contributor>()
 
     Scaffold(
         topBar = {
@@ -112,9 +85,9 @@ fun ContributionScreen(navController: NavController) {
                     onClick = {
                         val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
                             data = Uri.parse("mailto:mkshaonnew31@gmail.com")
-                            putExtra(Intent.EXTRA_SUBJECT, "Social Sentry App Bug Report")
+                            putExtra(Intent.EXTRA_SUBJECT, "AuraWake Bug Report")
                             val body = """
-                                App: Social Sentry
+                                App: AuraWake
                                 
                                 What happened:
                                 [Describe the bug here]
@@ -137,7 +110,7 @@ fun ContributionScreen(navController: NavController) {
                             android.widget.Toast.makeText(context, "No email app found", android.widget.Toast.LENGTH_SHORT).show()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C3CC)), // Cyan color from image
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C3CC)), // Cyan color
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -166,12 +139,28 @@ fun ContributionScreen(navController: NavController) {
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(contributors) { contributor ->
-                    ContributorCard(contributor)
+            if (contributors.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No bugs reported yet.\nBe the first to contribute!",
+                        color = Color.DarkGray,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        fontSize = 16.sp
+                    )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(contributors) { contributor ->
+                        ContributorCard(contributor)
+                    }
                 }
             }
         }
