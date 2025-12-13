@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.alarm.app"
+    namespace = "com.aura.wake"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.alarm.app"
+        applicationId = "com.aura.wake"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
