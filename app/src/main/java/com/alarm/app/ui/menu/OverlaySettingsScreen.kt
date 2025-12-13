@@ -82,33 +82,71 @@ fun OverlaySettingsScreen(navController: NavController) {
                 )
             )
         },
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Black)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                 Button(
+                    onClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(32.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = null, tint = Color.Black)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Select Image", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+                
+                 if (overlayUri != null) {
+                    TextButton(
+                        onClick = {
+                            overlayUri = null
+                            settingsRepository.saveOverlayImageUri(null)
+                        },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text("Reset to Default Moon", color = Color.Red, fontSize = 14.sp)
+                    }
+                }
+            }
+        },
         containerColor = Color.Black
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 24.dp)
+                .padding(top = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             
-            // Preview Section
+            // Preview Label
             Text(
                 "PREVIEW",
                 color = Color.Gray,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.Start)
             )
             
             // Mock Alarm Screen (Miniature)
+            // Cuter, smaller aspect ratio
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(0.6f) // roughly phone aspect ratio
-                    .clip(RoundedCornerShape(24.dp))
-                    .border(1.dp, Color.DarkGray, RoundedCornerShape(24.dp))
+                    .weight(1f) // Take available space but leave room for text
+                    .clip(RoundedCornerShape(32.dp))
+                    .border(1.dp, Color(0xFF333333), RoundedCornerShape(32.dp))
                     .background(Color.Black)
             ) {
                  // Background Image (Full Screen)
@@ -130,36 +168,34 @@ fun OverlaySettingsScreen(navController: NavController) {
                  Column(
                      modifier = Modifier.fillMaxSize().padding(16.dp),
                      horizontalAlignment = Alignment.CenterHorizontally,
-                     verticalArrangement = Arrangement.spacedBy(32.dp)
+                     verticalArrangement = Arrangement.spacedBy(24.dp)
                  ) {
                      Spacer(modifier = Modifier.weight(0.2f))
                      
-                     // Time
                      // Time (Real-time)
-                     val currentTime = java.util.Calendar.getInstance()
-                     Text(
-                        text = String.format("%02d:%02d", currentTime.get(java.util.Calendar.HOUR_OF_DAY), currentTime.get(java.util.Calendar.MINUTE)),
-                        color = Color.White, 
-                        fontSize = 48.sp, 
-                        fontWeight = FontWeight.Bold
-                     )
+                      val currentTime = java.util.Calendar.getInstance()
+                      Text(
+                         text = String.format("%02d:%02d", currentTime.get(java.util.Calendar.HOUR_OF_DAY), currentTime.get(java.util.Calendar.MINUTE)),
+                         color = Color.White, 
+                         fontSize = 42.sp, // Slightly smaller for "cute" compact look in preview
+                         fontWeight = FontWeight.Bold
+                      )
                      
                      // The Overlay Image (Moon or Custom)
-                     // If custom image is set, we don't show the circle anymore, or we show just the moon if no image
                      if (overlayUri == null) {
                          Box(
                             modifier = Modifier
-                                .size(180.dp)
+                                .size(140.dp) // Smaller moon
                                 .clip(CircleShape)
                                 .background(Color.DarkGray)
                                 .border(2.dp, Color.White.copy(alpha = 0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                          ) {
-                             Text("🌑", fontSize = 100.sp)
+                             Text("🌑", fontSize = 80.sp)
                          }
                      } else {
                          // Spacer to keep layout similar roughly
-                         Spacer(modifier = Modifier.size(180.dp))
+                         Spacer(modifier = Modifier.size(140.dp))
                      }
                      
                      // Fake Snooze
@@ -167,13 +203,13 @@ fun OverlaySettingsScreen(navController: NavController) {
                         shape = RoundedCornerShape(percent = 50),
                         color = Color.White,
                         modifier = Modifier
-                            .height(40.dp)
+                            .height(36.dp) // Smaller button
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 24.dp)
+                            modifier = Modifier.padding(horizontal = 20.dp)
                         ) {
-                            Text("Snooze", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Snooze", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
                     
@@ -181,41 +217,12 @@ fun OverlaySettingsScreen(navController: NavController) {
                  }
             }
             
-            // Actions
-            Spacer(modifier = Modifier.weight(1f)) // Push to bottom if space available
-            
-            Button(
-                onClick = {
-                    photoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1C1C1E)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-            ) {
-                Icon(Icons.Default.Image, contentDescription = null, tint = Color.White)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("Select Image from Gallery", color = Color.White, fontSize = 16.sp)
-            }
-            
-             if (overlayUri != null) {
-                TextButton(
-                    onClick = {
-                        overlayUri = null
-                        settingsRepository.saveOverlayImageUri(null)
-                    }
-                ) {
-                    Text("Reset to Default Moon", color = Color.Red)
-                }
-            }
-            
             Text(
-                "This image will appear as the background of the screen when your alarm rings.",
+                "The selected image will appear as the background when your alarm rings.",
                 color = Color.Gray,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
         }
     }
