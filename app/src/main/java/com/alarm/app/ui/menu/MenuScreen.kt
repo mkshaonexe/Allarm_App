@@ -80,12 +80,12 @@ fun MenuScreen(navController: NavController) {
 
             // CUSTOMIZATION
             SettingsSection(title = "CUSTOMIZATION") {
-                 SettingsItem(
+                SettingsItem(
                     icon = Icons.Default.Flag,
                     title = "Customize Mission",
                     subtitle = "Set default challenge settings",
                     onClick = {
-                        // Navigate to mission settings
+                        navController.navigate("mission_customization")
                     }
                 )
                 SettingsItem(

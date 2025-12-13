@@ -162,6 +162,30 @@ class MainActivity : ComponentActivity() {
                     composable("settings_menu") {
                         MenuScreen(navController = navController)
                     }
+                    composable("mission_customization") { 
+                        com.alarm.app.ui.mission.MissionCustomizationListScreen(navController = navController)
+                    }
+                    composable("mission_settings/{type}") { backStackEntry ->
+                        val typeStr = backStackEntry.arguments?.getString("type")
+                        val type = try {
+                            com.alarm.app.data.model.ChallengeType.valueOf(typeStr ?: "")
+                        } catch (e: Exception) {
+                            com.alarm.app.data.model.ChallengeType.MATH
+                        }
+                        
+                        // We can either pass the type to a generic screen or route to specific screens
+                        // Since we created specific screens, let's switch
+                        when (type) {
+                            com.alarm.app.data.model.ChallengeType.MATH -> 
+                                com.alarm.app.ui.mission.MathMissionSettingsScreen(navController = navController)
+                            com.alarm.app.data.model.ChallengeType.TYPING ->
+                                com.alarm.app.ui.mission.TypingMissionSettingsScreen(navController = navController)
+                            com.alarm.app.data.model.ChallengeType.QR ->
+                                com.alarm.app.ui.mission.QrMissionSettingsScreen(navController = navController)
+                            else -> 
+                                com.alarm.app.ui.mission.MathMissionSettingsScreen(navController = navController) // Fallback
+                        }
+                    }
                     composable("profile") {
                         com.alarm.app.ui.profile.ProfileScreen(navController = navController)
                     }

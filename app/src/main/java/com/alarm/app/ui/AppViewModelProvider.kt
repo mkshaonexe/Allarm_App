@@ -21,6 +21,8 @@ object AppViewModelProvider {
                     AlarmViewModel(repository, scheduler) as T
                 modelClass.isAssignableFrom(com.alarm.app.ui.onboarding.OnboardingViewModel::class.java) ->
                     com.alarm.app.ui.onboarding.OnboardingViewModel(repository, scheduler, settingsRepository) as T
+                modelClass.isAssignableFrom(com.alarm.app.ui.mission.MissionSettingsViewModel::class.java) ->
+                    com.alarm.app.ui.mission.MissionSettingsViewModel(settingsRepository) as T
                 else -> throw IllegalArgumentException("Unknown ViewModel class")
             }
         }
