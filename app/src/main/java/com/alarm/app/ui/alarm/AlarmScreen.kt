@@ -159,54 +159,47 @@ fun AlarmScreen(
         ) {
             
             // Name Input Field
-            androidx.compose.material3.OutlinedTextField(
-                value = alarmName,
-                onValueChange = { alarmName = it },
-                placeholder = { Text("Please fill in the alarm name", color = Color.Gray) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = null,
-                        tint = Color.Yellow,
-                        modifier = Modifier.size(20.dp)
-                    )
-                },
-                trailingIcon = {
-                    Icon(
-                        Icons.Default.Edit, 
-                        contentDescription = null, 
-                        tint = Color.Gray, 
-                        modifier = Modifier.size(16.dp)
-                    )
-                },
-                colors = androidx.compose.material3.TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White,
-                    focusedIndicatorColor = Color.Gray,
-                    unfocusedIndicatorColor = Color.Gray.copy(alpha = 0.5f)
-                ),
-                singleLine = true,
+            // Name Input Field
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            )
+                    .padding(vertical = 8.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF2C2C2E))
+                    .padding(horizontal = 16.dp, vertical = 2.dp)
+            ) {
+                androidx.compose.material3.TextField(
+                    value = alarmName,
+                    onValueChange = { alarmName = it },
+                    placeholder = { Text("Alarm Name", color = Color.Gray, fontSize = 14.sp) },
+                    colors = androidx.compose.material3.TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             
+            // Wheel Time Picker
             // Wheel Time Picker
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(140.dp)
                     .background(Color(0xFF1C1C1E)),
                 contentAlignment = Alignment.Center
             ) {
                 // Background highlight
                 Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .fillMaxWidth(0.8f)
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(Color(0xFF2C2C2E)))
 
                 Row(
@@ -214,53 +207,47 @@ fun AlarmScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Hour Pager
-                    // Simplified: We assume user picks 24h format for simplicity or need complex 12h mapping
-                    // Let's implement simple vertical list for now or just text inputs if pager is tricky without accompanist
-                    // Using basic VerticalPager
                     WheelPicker(
                         count = 12,
-                        initialItem = if (displayHour == 12) 11 else displayHour - 1, // 0-11 mapping for 1-12
+                        initialItem = if (displayHour == 12) 11 else displayHour - 1, 
                         format = { (it + 1).toString().padStart(2, '0') },
                         onItemSelected = { idx -> 
-                             // Logic to update hour based on AM/PM
                              val h = idx + 1
-                             if (amPmState.value == 0) { // AM
+                             if (amPmState.value == 0) { 
                                  selectedHour = if (h == 12) 0 else h
-                             } else { // PM
+                             } else { 
                                  selectedHour = if (h == 12) 12 else h + 12
                              }
                         },
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(60.dp)
                     )
                     
-                    Text(":", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                    Text(":", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
                     
-                    // Minute Pager
                     WheelPicker(
                         count = 60,
                         initialItem = selectedMinute,
                         format = { it.toString().padStart(2, '0') },
                         onItemSelected = { selectedMinute = it },
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(60.dp)
                     )
                     
-                    // AM/PM
+                    Spacer(modifier = Modifier.width(16.dp))
+
                      WheelPicker(
                         count = 2,
                         initialItem = amPmState.value,
                         format = { if (it == 0) "AM" else "PM" },
                         onItemSelected = { idx -> 
                             amPmState.value = idx 
-                            // Re-adjust hour
                             val currentH12 = if (selectedHour == 0) 12 else if (selectedHour > 12) selectedHour - 12 else selectedHour
-                             if (idx == 0) { // AM
+                             if (idx == 0) { 
                                  selectedHour = if (currentH12 == 12) 0 else currentH12
-                             } else { // PM
+                             } else { 
                                  selectedHour = if (currentH12 == 12) 12 else currentH12 + 12
                              }
                         },
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(50.dp)
                     )
                 }
             }
@@ -298,9 +285,10 @@ fun AlarmScreen(
             }
 
             // Days Row
+            // Days Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceEvenly // Changed to SpaceEvenly for cleaner look
             ) {
                 val days = listOf("S", "M", "T", "W", "T", "F", "S")
                 days.forEachIndexed { index, day ->
@@ -309,7 +297,7 @@ fun AlarmScreen(
                     
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(32.dp) // Smaller size
                             .clip(CircleShape)
                             .background(if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF2C2C2E))
                             .clickable {
@@ -318,7 +306,7 @@ fun AlarmScreen(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(day, color = if (isSelected) Color.White else MaterialTheme.colorScheme.primary)
+                        Text(day, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (isSelected) Color.White else Color.Gray)
                     }
                 }
             }
@@ -326,45 +314,52 @@ fun AlarmScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             // Mission Card
+            // Mission Card
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2E)),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) { // Reduced padding
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Wake-up mission", color = Color.White, fontSize = 16.sp)
-                        Text("0/5", color = Color.Gray)
+                        Text("Wake-up mission", color = Color.White, fontSize = 14.sp)
+                        Text("0/5", color = Color.Gray, fontSize = 12.sp)
                     }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Challenge Buttons
+                        val modifier = Modifier.weight(1f)
                         ChallengeOption(
                             type = ChallengeType.MATH, 
                             isSelected = selectedChallenge == ChallengeType.MATH,
-                            onClick = { selectedChallenge = ChallengeType.MATH }
+                            onClick = { selectedChallenge = ChallengeType.MATH },
+                            modifier = modifier
                         )
                         ChallengeOption(
                             type = ChallengeType.TYPING, 
                             isSelected = selectedChallenge == ChallengeType.TYPING,
-                            onClick = { selectedChallenge = ChallengeType.TYPING }
+                            onClick = { selectedChallenge = ChallengeType.TYPING },
+                            modifier = modifier
                         )
                         ChallengeOption(
                             type = ChallengeType.SHAKE, 
                             isSelected = selectedChallenge == ChallengeType.SHAKE,
-                            onClick = { selectedChallenge = ChallengeType.SHAKE }
+                            onClick = { selectedChallenge = ChallengeType.SHAKE },
+                            modifier = modifier
                         )
                          ChallengeOption(
                             type = ChallengeType.QR, 
                             isSelected = selectedChallenge == ChallengeType.QR,
-                            onClick = { selectedChallenge = ChallengeType.QR }
+                            onClick = { selectedChallenge = ChallengeType.QR },
+                            modifier = modifier
                         )
                     }
                 }
@@ -373,27 +368,27 @@ fun AlarmScreen(
             Spacer(modifier = Modifier.weight(1f))
             
             // Save Button & Preview Button
+            // Save Button & Preview Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                  // Preview Button
                 Button(
                     onClick = {
-                        // Navigate to preview
                         navController.navigate(
                             "ringing?isPreview=true&challenge=${selectedChallenge.name}&startImmediate=false"
                         )
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C2C2E)),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(24.dp), // More rounded
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp)
+                        .height(48.dp) // Smaller height
                 ) {
-                    Text("Preview", fontSize = 18.sp, color = Color.White)
+                    Text("Preview", fontSize = 16.sp, color = Color.White)
                 }
 
                 // Save Button
@@ -403,12 +398,12 @@ fun AlarmScreen(
                         navController.popBackStack()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30)),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(24.dp), // More rounded
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp)
+                        .height(48.dp) // Smaller height
                 ) {
-                    Text("Save", fontSize = 18.sp, color = Color.White)
+                    Text("Save", fontSize = 16.sp, color = Color.White)
                 }
             }
         }
@@ -416,17 +411,16 @@ fun AlarmScreen(
 }
 
 @Composable
-fun ChallengeOption(type: ChallengeType, isSelected: Boolean, onClick: () -> Unit) {
+fun ChallengeOption(type: ChallengeType, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier
-            .size(60.dp)
+        modifier = modifier
+            .height(50.dp) // Fixed height, width flexible via weight
             .clip(RoundedCornerShape(12.dp))
             .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha=0.3f) else Color(0xFF1C1C1E))
-            .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray, RoundedCornerShape(12.dp))
+            .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-         // Using Text for abbreviation instead of Icons for now
          val label = when(type) {
              ChallengeType.MATH -> "Math"
              ChallengeType.TYPING -> "Type"
@@ -434,7 +428,7 @@ fun ChallengeOption(type: ChallengeType, isSelected: Boolean, onClick: () -> Uni
              ChallengeType.QR -> "QR"
              else -> "None"
          }
-         Text(label, color = Color.White, fontSize = 12.sp)
+         Text(label, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 @OptIn(ExperimentalFoundationApi::class)
@@ -512,28 +506,29 @@ fun WheelPicker(
     // If ItemHeight is 60dp, and we want 3 items visible, total height should be ~180dp or constrained by parent.
     // The parent Row/Box constrains it.
     
+    val height = 120.dp
+    val itemHeight = 40.dp
+    
     VerticalPager(
         state = pagerState,
-        modifier = modifier.height(180.dp), // 3 * 60dp
+        modifier = modifier.height(height),
         horizontalAlignment = Alignment.CenterHorizontally,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 60.dp) // padding to allow first/last item in center
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = (height - itemHeight) / 2)
     ) { page ->
         val isSelected = page == pagerState.currentPage
         
-        // Snap effect happens automatically with Pager
-        
         Box(
             modifier = Modifier
-                .height(60.dp) // Match the highlight box height
+                .height(itemHeight)
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = format(page),
-                fontSize = if (isSelected) 32.sp else 24.sp,
+                fontSize = if (isSelected) 24.sp else 16.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) Color.White else Color.Gray.copy(alpha = 0.5f),
-                modifier = Modifier.alpha(if (isSelected) 1f else 0.5f)
+                color = if (isSelected) Color.White else Color.Gray.copy(alpha = 0.4f),
+                modifier = Modifier.alpha(if (isSelected) 1f else 0.4f)
             )
         }
     }
