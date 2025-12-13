@@ -70,6 +70,7 @@ dependencies {
     // Utils
     implementation(libs.gson)
     implementation(libs.accompanist.permissions)
+    implementation("io.coil-kt:coil-compose:2.5.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

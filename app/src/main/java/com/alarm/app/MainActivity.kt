@@ -162,6 +162,9 @@ class MainActivity : ComponentActivity() {
                     composable("settings_menu") {
                         MenuScreen(navController = navController)
                     }
+                    composable("overlay_settings") {
+                        com.alarm.app.ui.menu.OverlaySettingsScreen(navController = navController)
+                    }
                     composable("mission_customization") { 
                         com.alarm.app.ui.mission.MissionCustomizationListScreen(navController = navController)
                     }

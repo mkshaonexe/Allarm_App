@@ -142,6 +142,8 @@ fun AlarmRingingContent(
     val typingConfig = remember { settingsRepository.getTypingMissionConfig() }
     val qrConfig = remember { settingsRepository.getQrMissionConfig() }
     
+    val overlayUri = remember { settingsRepository.getOverlayImageUri() }
+    
     if (isChallengeActive && challengeType != ChallengeType.NONE && !isPreview) {
         // Show the specific challenge UI
         when (challengeType) {
@@ -261,9 +263,19 @@ fun AlarmRingingContent(
                         modifier = Modifier
                             .size(280.dp)
                             .clip(CircleShape)
-                            .background(Color.DarkGray)
+                            .background(Color.DarkGray),
+                        contentAlignment = Alignment.Center
                     ) {
-                         Text("🌑", fontSize = 200.sp, modifier = Modifier.align(Alignment.Center))
+                        if (overlayUri != null) {
+                            coil.compose.AsyncImage(
+                                model = overlayUri,
+                                contentDescription = "Custom Overlay",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Text("🌑", fontSize = 200.sp, modifier = Modifier.align(Alignment.Center))
+                        }
                     }
                     
                     // Snooze Button Floating Over Moon (Bottom)

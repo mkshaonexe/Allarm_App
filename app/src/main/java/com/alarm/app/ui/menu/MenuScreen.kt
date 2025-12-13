@@ -93,7 +93,7 @@ fun MenuScreen(navController: NavController) {
                     title = "Customize Overlay",
                     subtitle = "Adjust alarm screen appearance",
                     onClick = {
-                        // Navigate to overlay settings
+                        navController.navigate("overlay_settings")
                     }
                 )
                   SettingsItem(
@@ -126,38 +126,6 @@ fun MenuScreen(navController: NavController) {
                 )
             }
 
-            // CONTRIBUTION
-            SettingsSection(title = "CONTRIBUTIONS") {
-                SettingsItem(
-                    icon = Icons.Default.Person,
-                    title = "Shan",
-                    subtitle = "Full App Development",
-                    showArrow = false,
-                    onClick = {}
-                )
-                SettingsItem(
-                    icon = Icons.Default.Brush,
-                    title = "MK Shaon",
-                    subtitle = "UI Design",
-                    showArrow = false,
-                    onClick = {}
-                )
-                SettingsItem(
-                    icon = Icons.Default.DesignServices,
-                    title = "MK X Shaon",
-                    subtitle = "UX Strategy",
-                    showArrow = false,
-                    onClick = {}
-                )
-                 SettingsItem(
-                    icon = Icons.Default.Code,
-                    title = "Mostofa",
-                    subtitle = "Backend Development",
-                    showArrow = false,
-                    onClick = {}
-                )
-            }
-
             // ABOUT
             SettingsSection(title = "ABOUT") {
                 SettingsItem(
@@ -167,7 +135,7 @@ fun MenuScreen(navController: NavController) {
                     showArrow = false,
                     onClick = {}
                 )
-                SettingsItem(
+                 SettingsItem(
                     icon = Icons.Default.PrivacyTip,
                     title = "Privacy Policy",
                     subtitle = "Read our privacy policy",

@@ -16,6 +16,9 @@ interface SettingsRepository {
     
     fun getQrMissionConfig(): com.alarm.app.data.model.QrMissionConfig
     fun saveQrMissionConfig(config: com.alarm.app.data.model.QrMissionConfig)
+
+    fun getOverlayImageUri(): String?
+    fun saveOverlayImageUri(uri: String?)
 }
 
 class SharedPreferencesSettingsRepository(private val context: Context) : SettingsRepository {
@@ -86,6 +89,16 @@ class SharedPreferencesSettingsRepository(private val context: Context) : Settin
     override fun saveQrMissionConfig(config: com.alarm.app.data.model.QrMissionConfig) {
          prefs.edit {
             putString("mission_qr_config", gson.toJson(config))
+        }
+    }
+
+    override fun getOverlayImageUri(): String? {
+        return prefs.getString("overlay_image_uri", null)
+    }
+
+    override fun saveOverlayImageUri(uri: String?) {
+        prefs.edit {
+            putString("overlay_image_uri", uri)
         }
     }
 }
