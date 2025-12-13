@@ -17,5 +17,7 @@ data class Alarm(
     val daysOfWeek: Set<Int> = emptySet(), // 1=Sunday, 2=Monday, ... 7=Saturday
     val label: String? = null,
     val challengeType: ChallengeType = ChallengeType.NONE,
-    val challengeConfig: String? = null // e.g., "DIFFICULT", "15_SHAKES", "QR_CODE_CONTENT"
+    val challengeConfig: String? = null,
+    val ringtoneUri: String? = null,
+    val ringtoneTitle: String? = null
 )

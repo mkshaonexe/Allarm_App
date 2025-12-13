@@ -44,7 +44,10 @@ data class RingtoneItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomizeRingtoneScreen(navController: NavController) {
+fun CustomizeRingtoneScreen(
+    navController: NavController,
+    isPicker: Boolean = false
+) {
     val context = LocalContext.current
     val settingsRepository = (context.applicationContext as com.alarm.app.AlarmApplication).container.settingsRepository
     
@@ -57,9 +60,17 @@ fun CustomizeRingtoneScreen(navController: NavController) {
     // MediaPlayer
     val mediaPlayer = remember { MediaPlayer() }
     
-    // Load saved ringtone
+    // Load saved ringtone or initial selection
     LaunchedEffect(Unit) {
-        val savedUriStr = settingsRepository.getDefaultRingtoneUri()
+        // If picker, check for passed argument? For now just default to saved or system default
+        // In picker mode, we might want to pre-select what was passed.
+        val savedUriStr = if (isPicker) {
+            // Check saved state handle or args
+            navController.previousBackStackEntry?.savedStateHandle?.get<String>("initial_ringtone_uri") ?: settingsRepository.getDefaultRingtoneUri()
+        } else {
+            settingsRepository.getDefaultRingtoneUri()
+        }
+        
         selectedRingtoneUri = savedUriStr?.let { Uri.parse(it) } ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         
         // Fetch System Ringtones
@@ -133,19 +144,24 @@ fun CustomizeRingtoneScreen(navController: NavController) {
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            // Persist permission if needed (usually just saving string URI works fine for openable intent)
-            // But for alarm, we might need persistent read permission.
-             try {
+            try {
                 context.contentResolver.takePersistableUriPermission(
                     it,
                     android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-            } catch (e: Exception) {
-                // Ignore if not possible
-            }
+            } catch (e: Exception) {}
             
             selectedRingtoneUri = it
-            settingsRepository.saveDefaultRingtoneUri(it.toString())
+            
+            if (!isPicker) {
+                settingsRepository.saveDefaultRingtoneUri(it.toString())
+            } else {
+                 // Return result for picker
+                navController.previousBackStackEntry?.savedStateHandle?.set("selected_ringtone_uri", it.toString())
+                // We don't verify title here easily, maybe just use "Custom" or file name
+                navController.previousBackStackEntry?.savedStateHandle?.set("selected_ringtone_title", "Custom Tone")
+                navController.popBackStack()
+            }
             playRingtone(it)
         }
     }
@@ -155,7 +171,7 @@ fun CustomizeRingtoneScreen(navController: NavController) {
             TopAppBar(
                 title = { 
                     Text(
-                        "Customize Ringtone", 
+                        if (isPicker) "Select Alarm Sound" else "Customize Ringtone", 
                         fontWeight = FontWeight.Bold, 
                         color = Color.White
                     ) 
@@ -230,8 +246,21 @@ fun CustomizeRingtoneScreen(navController: NavController) {
                             .fillMaxWidth()
                             .clickable {
                                 selectedRingtoneUri = ringtone.uri
-                                settingsRepository.saveDefaultRingtoneUri(ringtone.uri.toString())
                                 playRingtone(ringtone.uri)
+                                
+                                if (!isPicker) {
+                                    settingsRepository.saveDefaultRingtoneUri(ringtone.uri.toString())
+                                } else {
+                                    // Make selection active but don't close immediately? Or close immediately?
+                                    // UX: Usually click to preview, another action to confirm? 
+                                    // Or click selects and marks it. 
+                                    // Let's assume click selects and keeps on screen to listen.
+                                    // But how to confirm? Back button?
+                                    // Let's add a "Save" button or assume selection is final on Back if we set it.
+                                    // But standard is select + listen. Maybe add a "Done" button or set result on every click.
+                                    navController.previousBackStackEntry?.savedStateHandle?.set("selected_ringtone_uri", ringtone.uri.toString())
+                                    navController.previousBackStackEntry?.savedStateHandle?.set("selected_ringtone_title", ringtone.title)
+                                }
                             }
                             .padding(vertical = 12.dp, horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically

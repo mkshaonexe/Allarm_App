@@ -94,7 +94,10 @@ class AlarmService : Service() {
         Log.d("AlarmService", "🔔 Starting alarm service for: $alarmId")
         
         startForeground(NOTIFICATION_ID, createNotification(alarmId, challengeType))
-        startRinging()
+        intent?.let {
+            val ringtoneUri = it.getStringExtra("RINGTONE_URI")
+            startRinging(ringtoneUri)
+        } ?: startRinging(null)
         startVibration()
         
         // Show Overlay if permission granted
@@ -194,7 +197,7 @@ class AlarmService : Service() {
         }
     }
 
-    private fun startRinging() {
+    private fun startRinging(specificRingtoneUri: String?) {
         try {
             // Set volume to maximum for alarm stream
             val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -206,9 +209,12 @@ class AlarmService : Service() {
             startVolumeEnforcement(audioManager)
             
             val settingsRepository = (applicationContext as com.alarm.app.AlarmApplication).container.settingsRepository
-            val customRingtone = settingsRepository.getDefaultRingtoneUri()?.let { android.net.Uri.parse(it) }
+            val defaultRingtone = settingsRepository.getDefaultRingtoneUri()
+            
+            val targetUriString = specificRingtoneUri ?: defaultRingtone
+            val targetUri = targetUriString?.let { android.net.Uri.parse(it) }
 
-            val alarmUri = customRingtone ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            val alarmUri = targetUri ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             
             mediaPlayer = MediaPlayer().apply {

@@ -38,7 +38,14 @@ class AlarmViewModel(
             initialValue = emptyList()
         )
 
-    fun addAlarm(hour: Int, minute: Int, challengeType: ChallengeType, label: String? = null) {
+    fun addAlarm(
+        hour: Int, 
+        minute: Int, 
+        challengeType: ChallengeType, 
+        label: String? = null,
+        ringtoneUri: String? = null,
+        ringtoneTitle: String? = null
+    ) {
         viewModelScope.launch {
             val alarm = Alarm(
                 id = UUID.randomUUID().toString(),
@@ -46,7 +53,9 @@ class AlarmViewModel(
                 minute = minute,
                 isEnabled = true,
                 challengeType = challengeType,
-                label = if (label.isNullOrBlank()) null else label
+                label = if (label.isNullOrBlank()) null else label,
+                ringtoneUri = ringtoneUri,
+                ringtoneTitle = ringtoneTitle
             )
             repository.insertAlarm(alarm)
             scheduler.schedule(alarm) // Schedule the alarm with AlarmManager

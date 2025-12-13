@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -59,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -365,6 +367,56 @@ fun AlarmScreen(
                 }
             }
             
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Alarm Sound Selector
+            // Retrieve result from navigation
+            val navBackStackEntry = navController.currentBackStackEntry
+            val savedStateHandle = navBackStackEntry?.savedStateHandle
+            
+            var selectedRingtoneUri by remember { mutableStateOf<String?>(null) }
+            var selectedRingtoneTitle by remember { mutableStateOf<String?>(null) }
+            
+            // Observe result
+            LaunchedEffect(savedStateHandle) {
+                 savedStateHandle?.getLiveData<String>("selected_ringtone_uri")?.observe(navBackStackEntry) { uri ->
+                     selectedRingtoneUri = uri
+                 }
+                 savedStateHandle?.getLiveData<String>("selected_ringtone_title")?.observe(navBackStackEntry) { title ->
+                     selectedRingtoneTitle = title
+                 }
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2E)),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { navController.navigate("pick_ringtone") }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Alarm Sound", color = Color.White, fontSize = 16.sp)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            selectedRingtoneTitle ?: "Default", 
+                            color = Color.Gray, 
+                            fontSize = 14.sp
+                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp).rotate(180f))
+                    }
+                }
+            }
+            
             Spacer(modifier = Modifier.weight(1f))
             
             // Save Button & Preview Button
@@ -394,7 +446,14 @@ fun AlarmScreen(
                 // Save Button
                 Button(
                     onClick = {
-                        viewModel.addAlarm(selectedHour, selectedMinute, selectedChallenge, alarmName)
+                        viewModel.addAlarm(
+                            selectedHour, 
+                            selectedMinute, 
+                            selectedChallenge, 
+                            alarmName,
+                            selectedRingtoneUri,
+                            selectedRingtoneTitle
+                        )
                         navController.popBackStack()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30)),

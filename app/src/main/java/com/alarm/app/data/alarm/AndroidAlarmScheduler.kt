@@ -19,6 +19,7 @@ class AndroidAlarmScheduler(
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("ALARM_ID", alarm.id)
             putExtra("CHALLENGE_TYPE", alarm.challengeType.name)
+            putExtra("RINGTONE_URI", alarm.ringtoneUri)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
