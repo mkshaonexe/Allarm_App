@@ -110,35 +110,49 @@ fun OverlaySettingsScreen(navController: NavController) {
                     .clip(RoundedCornerShape(24.dp))
                     .border(1.dp, Color.DarkGray, RoundedCornerShape(24.dp))
                     .background(Color.Black)
-            ,
-                contentAlignment = Alignment.Center
             ) {
+                 // Background Image (Full Screen)
+                 if (overlayUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(overlayUri),
+                        contentDescription = "Custom Overlay",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    // Dark overlay for text readability
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.4f))
+                    )
+                 }
+
                  Column(
+                     modifier = Modifier.fillMaxSize().padding(16.dp),
                      horizontalAlignment = Alignment.CenterHorizontally,
                      verticalArrangement = Arrangement.spacedBy(32.dp)
                  ) {
+                     Spacer(modifier = Modifier.weight(0.2f))
+                     
                      // Time
                      Text("10:44", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Bold)
                      
                      // The Overlay Image (Moon or Custom)
-                     Box(
-                        modifier = Modifier
-                            .size(180.dp)
-                            .clip(CircleShape)
-                            .background(Color.DarkGray)
-                            .border(2.dp, Color.White.copy(alpha = 0.1f), CircleShape),
-                        contentAlignment = Alignment.Center
-                     ) {
-                         if (overlayUri != null) {
-                            Image(
-                                painter = rememberAsyncImagePainter(overlayUri),
-                                contentDescription = "Custom Overlay",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                         } else {
+                     // If custom image is set, we don't show the circle anymore, or we show just the moon if no image
+                     if (overlayUri == null) {
+                         Box(
+                            modifier = Modifier
+                                .size(180.dp)
+                                .clip(CircleShape)
+                                .background(Color.DarkGray)
+                                .border(2.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                         ) {
                              Text("🌑", fontSize = 100.sp)
                          }
+                     } else {
+                         // Spacer to keep layout similar roughly
+                         Spacer(modifier = Modifier.size(180.dp))
                      }
                      
                      // Fake Snooze
@@ -155,10 +169,14 @@ fun OverlaySettingsScreen(navController: NavController) {
                             Text("Snooze", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                     }
+                    
+                    Spacer(modifier = Modifier.weight(1f))
                  }
             }
             
             // Actions
+            Spacer(modifier = Modifier.weight(1f)) // Push to bottom if space available
+            
             Button(
                 onClick = {
                     photoPickerLauncher.launch(
@@ -185,13 +203,12 @@ fun OverlaySettingsScreen(navController: NavController) {
                 }
             }
             
-            Spacer(modifier = Modifier.weight(1f))
-            
             Text(
-                "This image will appear in the center of the screen when your alarm rings.",
+                "This image will appear as the background of the screen when your alarm rings.",
                 color = Color.Gray,
                 fontSize = 14.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(bottom = 16.dp)
             )
         }
     }

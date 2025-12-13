@@ -207,6 +207,22 @@ fun AlarmRingingContent(
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
+            // Full Screen Background Image if Overlay Set
+            if (overlayUri != null) {
+                 coil.compose.AsyncImage(
+                    model = overlayUri,
+                    contentDescription = "Custom Overlay",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                // Dark Overlay for readability
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                )
+            }
+            
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -258,24 +274,19 @@ fun AlarmRingingContent(
                     modifier = Modifier.size(300.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Moon Graphic Placeholder - Pure rounded Circle
-                    Box(
-                        modifier = Modifier
-                            .size(280.dp)
-                            .clip(CircleShape)
-                            .background(Color.DarkGray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (overlayUri != null) {
-                            coil.compose.AsyncImage(
-                                model = overlayUri,
-                                contentDescription = "Custom Overlay",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Text("🌑", fontSize = 200.sp, modifier = Modifier.align(Alignment.Center))
+                    // Moon Graphic Placeholder - Pure rounded Circle, ONLY show if NO overlay
+                    if (overlayUri == null) {
+                        Box(
+                            modifier = Modifier
+                                .size(280.dp)
+                                .clip(CircleShape)
+                                .background(Color.DarkGray)
+                        ) {
+                             Text("🌑", fontSize = 200.sp, modifier = Modifier.align(Alignment.Center))
                         }
+                    } else {
+                        // Invisible spacer to keep layout standard
+                         Spacer(modifier = Modifier.size(280.dp))
                     }
                     
                     // Snooze Button Floating Over Moon (Bottom)
