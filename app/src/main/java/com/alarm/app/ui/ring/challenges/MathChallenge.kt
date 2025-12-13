@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,161 +40,225 @@ import kotlin.random.Random
 
 @Composable
 fun MathChallenge(
+    difficulty: com.alarm.app.data.model.Difficulty = com.alarm.app.data.model.Difficulty.EASY,
+    problemCount: Int = 3,
     onCompleted: () -> Unit
 ) {
-    val num1 = remember { Random.nextInt(10, 99) }
-    val num2 = remember { Random.nextInt(10, 99) }
-    val correctAnswer = num1 + num2
+    var problemsSolved by remember { mutableStateOf(0) }
     
+    // Generate new numbers when a problem is solved (key changes)
+    val problemState = remember(problemsSolved) {
+        generateProblem(difficulty)
+    }
+    
+    val num1 = problemState.first
+    val num2 = problemState.second
+    val num3 = problemState.third // For hard/very hard
+    val operation = problemState.fourth // +, -, *
+    
+    val correctAnswer = calculateAnswer(num1, num2, num3, operation, difficulty)
+
     var answer by remember { mutableStateOf("") }
-    var shakeError by remember { mutableStateOf(false) } // Visual feedback hook
+    var shakeError by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF1C1C1E))
-            .padding(16.dp)
-    ) {
-        // Top Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { /* Handle back if needed */ }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-            }
-            Text("1 / 3", color = Color.Gray, fontSize = 16.sp)
-            IconButton(onClick = { /* Toggle Mute */ }) {
-                Icon(Icons.Default.VolumeOff, contentDescription = "Mute", tint = Color.Gray)
-            }
+    // If all solved, complete
+    LaunchedEffect(problemsSolved) {
+        if (problemsSolved >= problemCount) {
+            onCompleted()
         }
+    }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Equation Display
+    if (problemsSolved < problemCount) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF1C1C1E))
+                .padding(16.dp)
         ) {
-            Text(
-                text = "$num1 + $num2 =",
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Answer Box
-            Surface(
-                color = Color(0xFF2C2C2E),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(2.dp, if (shakeError) Color.Red else Color.White),
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(60.dp)
+            // Top Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                     Text(
-                        text = answer,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                IconButton(onClick = { /* Handle back if needed */ }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+                Text("${problemsSolved + 1} / $problemCount", color = Color.Gray, fontSize = 16.sp)
+                IconButton(onClick = { /* Toggle Mute */ }) {
+                    Icon(Icons.Default.VolumeOff, contentDescription = "Mute", tint = Color.Gray)
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
 
-        // Custom Numpad
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            val rows = listOf(
-                listOf("7", "8", "9"),
-                listOf("4", "5", "6"),
-                listOf("1", "2", "3")
-            )
-
-            rows.forEach { row ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+            // Equation Display
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = formatProblem(num1, num2, num3, operation, difficulty),
+                    fontSize = 40.sp, // Slightly smaller to fit "Hard" equations
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Answer Box
+                Surface(
+                    color = Color(0xFF2C2C2E),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(2.dp, if (shakeError) Color.Red else Color.White),
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(60.dp)
                 ) {
-                    row.forEach { digit ->
-                        NumPadButton(
-                            text = digit,
-                            modifier = Modifier.weight(1f).height(70.dp),
-                            onClick = { 
-                                if (answer.length < 4) answer += digit 
-                                shakeError = false
-                            }
+                    Box(contentAlignment = Alignment.Center) {
+                         Text(
+                            text = answer,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     }
                 }
             }
-            
-            // Bottom Row: Backspace, 0, Check
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Custom Numpad
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Backspace
-                Surface(
-                    onClick = { if (answer.isNotEmpty()) answer = answer.dropLast(1) },
-                    color = Color(0xFF2C2C2E),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f).height(70.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Backspace, contentDescription = "Delete", tint = Color.White)
+                val rows = listOf(
+                    listOf("7", "8", "9"),
+                    listOf("4", "5", "6"),
+                    listOf("1", "2", "3")
+                )
+
+                rows.forEach { row ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        row.forEach { digit ->
+                            NumPadButton(
+                                text = digit,
+                                modifier = Modifier.weight(1f).height(70.dp),
+                                onClick = { 
+                                    if (answer.length < 5) answer += digit 
+                                    shakeError = false
+                                }
+                            )
+                        }
                     }
                 }
                 
-                // 0
-                NumPadButton(
-                    text = "0",
-                    modifier = Modifier.weight(1f).height(70.dp),
-                    onClick = { 
-                        if (answer.isNotEmpty() && answer.length < 4) answer += "0" 
-                    }
-                )
-                
-                // Check (Submit)
-                Surface(
-                    onClick = {
-                        if (answer.toIntOrNull() == correctAnswer) {
-                            onCompleted()
-                        } else {
-                            shakeError = true
-                            answer = ""
-                        }
-                    },
-                    color = Color(0xFFFF3B30), // Red Accent
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f).height(70.dp)
+                // Bottom Row
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Check, contentDescription = "Submit", tint = Color.White)
+                    // Backspace
+                    Surface(
+                        onClick = { if (answer.isNotEmpty()) answer = answer.dropLast(1) },
+                        color = Color(0xFF2C2C2E),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).height(70.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Backspace, contentDescription = "Delete", tint = Color.White)
+                        }
+                    }
+                    
+                    // 0
+                    NumPadButton(
+                        text = "0",
+                        modifier = Modifier.weight(1f).height(70.dp),
+                        onClick = { 
+                            if (answer.isNotEmpty() && answer.length < 5) answer += "0" 
+                        }
+                    )
+                    
+                    // Check (Submit)
+                    Surface(
+                        onClick = {
+                            if (answer.toIntOrNull() == correctAnswer) {
+                                problemsSolved++
+                                answer = ""
+                            } else {
+                                shakeError = true
+                                answer = ""
+                            }
+                        },
+                        color = Color(0xFFFF3B30),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).height(70.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Check, contentDescription = "Submit", tint = Color.White)
+                        }
                     }
                 }
             }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // "Exit preview" placeholder
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Exit preview", color = Color.Gray, fontSize = 14.sp)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+             Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Solve to dismiss", color = Color.Gray, fontSize = 14.sp)
+            }
         }
     }
 }
+
+fun generateProblem(difficulty: com.alarm.app.data.model.Difficulty): Quad<Int, Int, Int, String> {
+    return when (difficulty) {
+        com.alarm.app.data.model.Difficulty.EASY -> {
+            Quad(Random.nextInt(1, 20), Random.nextInt(1, 20), 0, "+")
+        }
+        com.alarm.app.data.model.Difficulty.MEDIUM -> {
+             // A + B - C or simple A + B with larger numbers
+             val op = if(Random.nextBoolean()) "+" else "-"
+             val n1 = Random.nextInt(20, 100)
+             val n2 = Random.nextInt(10, 50)
+             Quad(n1, n2, 0, op)
+        }
+        com.alarm.app.data.model.Difficulty.HARD -> {
+             // A * B + C
+             Quad(Random.nextInt(5, 15), Random.nextInt(5, 12), Random.nextInt(1, 20), "*+")
+        }
+        com.alarm.app.data.model.Difficulty.VERY_HARD -> {
+             // (A * B) - C ... same structure as hard for storage but display differs
+             Quad(Random.nextInt(10, 20), Random.nextInt(5, 15), Random.nextInt(10, 50), "*-")
+        }
+    }
+}
+
+fun calculateAnswer(n1: Int, n2: Int, n3: Int, op: String, diff: com.alarm.app.data.model.Difficulty): Int {
+    return when (diff) {
+        com.alarm.app.data.model.Difficulty.EASY -> n1 + n2
+        com.alarm.app.data.model.Difficulty.MEDIUM -> if (op == "+") n1 + n2 else n1 - n2
+        com.alarm.app.data.model.Difficulty.HARD -> (n1 * n2) + n3
+        com.alarm.app.data.model.Difficulty.VERY_HARD -> (n1 * n2) - n3
+    }
+}
+
+fun formatProblem(n1: Int, n2: Int, n3: Int, op: String, diff: com.alarm.app.data.model.Difficulty): String {
+    return when (diff) {
+        com.alarm.app.data.model.Difficulty.EASY -> "$n1 + $n2 ="
+        com.alarm.app.data.model.Difficulty.MEDIUM -> if (op == "+") "$n1 + $n2 =" else "$n1 - $n2 ="
+        com.alarm.app.data.model.Difficulty.HARD -> "$n1 x $n2 + $n3 ="
+        com.alarm.app.data.model.Difficulty.VERY_HARD -> "( $n1 x $n2 ) - $n3 ="
+    }
+}
+
+data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Composable
 fun NumPadButton(

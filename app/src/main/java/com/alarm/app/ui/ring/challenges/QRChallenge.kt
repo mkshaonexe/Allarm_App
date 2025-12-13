@@ -96,14 +96,24 @@ fun QRChallenge(
                                         for (barcode in barcodes) {
                                             val rawValue = barcode.rawValue
                                             if (rawValue != null) {
-                                                // For now, accept ANY QR code for demo
-                                                if (!isCompleted) {
-                                                    isCompleted = true
-                                                    executor.execute {
-                                                        onCompleted()
+                                                // Validate against targetContent if available
+                                                if (targetContent != null && targetContent.isNotEmpty()) {
+                                                    if (rawValue == targetContent) {
+                                                        if (!isCompleted) {
+                                                            isCompleted = true
+                                                            executor.execute { onCompleted() }
+                                                        }
+                                                        break
+                                                    } 
+                                                    // Else ignore invalid QR
+                                                } else {
+                                                    // Accept any if no target
+                                                    if (!isCompleted) {
+                                                        isCompleted = true
+                                                        executor.execute { onCompleted() }
                                                     }
+                                                    break
                                                 }
-                                                break // Stop checking other barcodes
                                             }
                                         }
                                     }

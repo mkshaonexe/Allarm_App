@@ -130,23 +130,55 @@ fun AlarmRingingContent(
     
     val currentTime = Calendar.getInstance()
     
+    
+    // Fetch Global Mission Configs
+    val context = LocalContext.current
+    val application = context.applicationContext as com.alarm.app.AlarmApplication
+    val settingsRepository = remember { application.container.settingsRepository }
+    
+    // These should ideally be collected as state if they can change while ringing (unlikely)
+    // but just reading them once is fine for now.
+    val mathConfig = remember { settingsRepository.getMathMissionConfig() }
+    val typingConfig = remember { settingsRepository.getTypingMissionConfig() }
+    val qrConfig = remember { settingsRepository.getQrMissionConfig() }
+    
     if (isChallengeActive && challengeType != ChallengeType.NONE && !isPreview) {
         // Show the specific challenge UI
         when (challengeType) {
-            ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(onCompleted = onDismiss)
+            ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(
+                difficulty = mathConfig.difficulty,
+                problemCount = mathConfig.problemCount,
+                onCompleted = onDismiss
+            )
             ChallengeType.SHAKE -> com.alarm.app.ui.ring.challenges.ShakeChallenge(onCompleted = onDismiss)
-            ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(onCompleted = onDismiss)
-            ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(onCompleted = onDismiss)
+            ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(
+                sentences = typingConfig.sentences.takeIf { it.isNotEmpty() } ?: listOf("I am unstoppable"),
+                onCompleted = onDismiss
+            )
+            ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(
+                targetContent = qrConfig.qrContent,
+                onCompleted = onDismiss
+            )
             else -> onDismiss() 
         }
     } else if (isChallengeActive && challengeType != ChallengeType.NONE && isPreview) {
-         // Previewing the challenge
+         // Previewing the challenge - Use current configs too!
          Box(modifier = Modifier.fillMaxSize()) {
             when (challengeType) {
-                ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(onCompleted = onDismiss)
+                ChallengeType.MATH -> com.alarm.app.ui.ring.challenges.MathChallenge(
+                    difficulty = mathConfig.difficulty,
+                    problemCount = mathConfig.problemCount,
+                    onCompleted = onDismiss
+                )
                 ChallengeType.SHAKE -> com.alarm.app.ui.ring.challenges.ShakeChallenge(onCompleted = onDismiss)
-                ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(onCompleted = onDismiss)
-                ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(onCompleted = onDismiss)
+                ChallengeType.TYPING -> com.alarm.app.ui.ring.challenges.TypingChallenge(
+                    sentences = typingConfig.sentences.takeIf { it.isNotEmpty() } ?: listOf("I am unstoppable"),
+                    onCompleted = onDismiss
+                )
+                ChallengeType.QR -> com.alarm.app.ui.ring.challenges.QRChallenge(
+                    targetContent = qrConfig.qrContent,
+                    onCompleted = onDismiss
+                )
                 else -> onDismiss()
             }
             

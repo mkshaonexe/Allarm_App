@@ -51,128 +51,136 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TypingChallenge(
+    sentences: List<String> = listOf("Typing is fun", "Practice makes perfect"),
     onCompleted: () -> Unit
 ) {
-    val phrases = listOf(
-        "Live with joy",
-        "Practice makes perfect",
-        "Action speaks louder",
-        "Time is money"
-    )
-    val targetPhrase = remember { phrases.random() }
-    var userText by remember { mutableStateOf("") }
-    val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-        keyboardController?.show()
+    var currentSentenceIndex by remember { mutableStateOf(0) }
+    
+    // Check if we finished all sentences
+    LaunchedEffect(currentSentenceIndex) {
+        if (currentSentenceIndex >= sentences.size) {
+            onCompleted()
+        }
     }
+    
+    if (currentSentenceIndex < sentences.size) {
+        val targetPhrase = sentences[currentSentenceIndex]
+        var userText by remember(currentSentenceIndex) { mutableStateOf("") }
+        val focusRequester = remember { FocusRequester() }
+        val keyboardController = LocalSoftwareKeyboardController.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF1C1C1E))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-         // Top Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { /* Handle back */ }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-            }
-            Text("1 / 2", color = Color.Gray, fontSize = 16.sp)
-             IconButton(onClick = { /* Toggle Mute */ }) {
-                Icon(Icons.Default.VolumeOff, contentDescription = "Mute", tint = Color.Gray)
-            }
+        LaunchedEffect(Unit, currentSentenceIndex) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Text Display Area
-        // Logic: Show targetPhrase. Typed characters should match. 
-        // We can color correct chars Green, incorrect Red, remaining Gray/White.
-        // Or simplified as per screenshot: White text, maybe typed part highlighted? 
-        // Let's implement simple "Current typed vs Target" diff visual.
-        
-        Text(
-            text = buildAnnotatedString {
-                // Typed part
-                withStyle(style = SpanStyle(color = Color.White, fontWeight = FontWeight.Bold)) {
-                    append(userText)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF1C1C1E))
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+             // Top Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { /* Handle back */ }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                 }
-                // Remaining part
-                if (userText.length < targetPhrase.length) {
-                    withStyle(style = SpanStyle(color = Color.Gray.copy(alpha=0.5f), fontWeight = FontWeight.Bold)) {
-                        append(targetPhrase.substring(userText.length))
+                Text("${currentSentenceIndex + 1} / ${sentences.size}", color = Color.Gray, fontSize = 16.sp)
+                 IconButton(onClick = { /* Toggle Mute */ }) {
+                    Icon(Icons.Default.VolumeOff, contentDescription = "Mute", tint = Color.Gray)
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Text Display Area
+            Text(
+                text = buildAnnotatedString {
+                    // Typed part
+                    withStyle(style = SpanStyle(color = Color.White, fontWeight = FontWeight.Bold)) {
+                        append(userText)
                     }
-                }
-            },
-            fontSize = 32.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-        // Cursor indicator (Blue drop in screenshot, simplified here as a blinker or nothing)
-        
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Invisible input field to capture typing
-        BasicTextField(
-            value = userText,
-            onValueChange = { newValue ->
-                if (newValue.length <= targetPhrase.length) {
-                    userText = newValue
-                }
-            },
-            modifier = Modifier
-                .size(1.dp)
-                .focusRequester(focusRequester), // Attached correctly to modifier
-            cursorBrush = SolidColor(Color.Transparent),
-            textStyle = androidx.compose.ui.text.TextStyle(color = Color.Transparent),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { 
-                 if (userText.equals(targetPhrase, ignoreCase = true)) {
-                    onCompleted()
-                 }
-            })
-        )
-        
-        Spacer(modifier = Modifier.weight(1f))
-        
-        // Progress / Count
-        Text(
-            text = "${userText.length} / ${targetPhrase.length}",
-            color = MaterialTheme.colorScheme.primary,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Complete Button
-        val isComplete = userText.equals(targetPhrase, ignoreCase = true)
-        Button(
-            onClick = {
-                if (isComplete) {
-                    onCompleted()
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isComplete) MaterialTheme.colorScheme.primary else Color(0xFF2C2C2E),
-                contentColor = if (isComplete) Color.White else Color.Gray
+                    // Remaining part (ensure we don't go out of bounds if user typed more than length somehow or just matching prefix)
+                    if (userText.length < targetPhrase.length) {
+                         // Only append remaining if matches so far? Or just append rest. 
+                         // Simple logic: append rest of target
+                        withStyle(style = SpanStyle(color = Color.Gray.copy(alpha=0.5f), fontWeight = FontWeight.Bold)) {
+                            append(targetPhrase.substring(userText.length))
+                        }
+                    }
+                },
+                fontSize = 32.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
-        ) {
-            Text("Complete", fontSize = 18.sp)
+            
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Invisible input field to capture typing
+            BasicTextField(
+                value = userText,
+                onValueChange = { newValue ->
+                    // Only update if it matches the prefix of targetPhrase (strict typing) OR just length limit
+                    // Let's enforce correct typing for better UX? Or just allow typing.
+                    // Strict typing:
+                    if (newValue.length <= targetPhrase.length && targetPhrase.startsWith(newValue, ignoreCase = true)) {
+                         userText = newValue
+                    } else if (newValue.length < userText.length) {
+                        // Allow backspace
+                        userText = newValue
+                    }
+                },
+                modifier = Modifier
+                    .size(1.dp)
+                    .focusRequester(focusRequester),
+                cursorBrush = SolidColor(Color.Transparent),
+                textStyle = androidx.compose.ui.text.TextStyle(color = Color.Transparent),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { 
+                     if (userText.equals(targetPhrase, ignoreCase = true)) {
+                        currentSentenceIndex++
+                     }
+                })
+            )
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Progress / Count
+            Text(
+                text = "${userText.length} / ${targetPhrase.length}",
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Complete Button
+            val isComplete = userText.equals(targetPhrase, ignoreCase = true)
+            Button(
+                onClick = {
+                    if (isComplete) {
+                        currentSentenceIndex++
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isComplete) MaterialTheme.colorScheme.primary else Color(0xFF2C2C2E),
+                    contentColor = if (isComplete) Color.White else Color.Gray
+                )
+            ) {
+                Text(if(currentSentenceIndex < sentences.size - 1) "Next" else "Complete", fontSize = 18.sp)
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
-        
-        Spacer(modifier = Modifier.height(16.dp)) // Space for keyboard
     }
 }
