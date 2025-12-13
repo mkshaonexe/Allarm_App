@@ -86,6 +86,7 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.alarm.app.data.model.ChallengeType
 
@@ -129,6 +130,15 @@ fun HomeScreen(
                                 color = Color.White,
                                 fontSize = 24.sp
                             ) 
+                        },
+                        actions = {
+                            IconButton(onClick = { /* Handle notification click */ }) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notifications",
+                                    tint = Color.White
+                                )
+                            }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = Color.Black
