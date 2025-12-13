@@ -33,6 +33,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 
 data class RingtoneItem(val name: String, val uri: String)
 
@@ -108,6 +122,20 @@ fun OnboardingSoundScreen(
         }
     }
 
+    // Launcher for Custom Audio
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            val name = "Custom Sound"
+            val customItem = RingtoneItem(name, it.toString())
+            // Add to list at the top or update list
+            ringtones = listOf(customItem) + ringtones
+            selectedSound = name
+            playPreview(customItem.uri)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -124,6 +152,73 @@ fun OnboardingSoundScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Carousel of Suggestions
+        if (ringtones.isNotEmpty()) {
+            Text(
+                "Favorites",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(ringtones.take(5)) { ringtone ->
+                    Card(
+                        onClick = {
+                            selectedSound = ringtone.name
+                            playPreview(ringtone.uri)
+                        },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selectedSound == ringtone.name) Color(0xFFFF3B30).copy(alpha = 0.2f) else Color(0xFF2C2C2E)
+                        ),
+                        border = if (selectedSound == ringtone.name) BorderStroke(1.dp, Color(0xFFFF3B30)) else null,
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(80.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                             Icon(
+                                imageVector = Icons.Default.MusicNote,
+                                contentDescription = null,
+                                tint = if (selectedSound == ringtone.name) Color(0xFFFF3B30) else Color.White,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            Text(
+                                text = ringtone.name,
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        // Add Custom Sound Button
+        Button(
+            onClick = { launcher.launch("audio/*") },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C2C2E)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Add custom ringtone", color = Color.White)
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Ringtone List
         LazyColumn(
             modifier = Modifier
@@ -132,7 +227,7 @@ fun OnboardingSoundScreen(
         ) {
             item {
                 Text(
-                    "Standard",
+                    "All Sounds",
                     color = Color.Gray,
                     fontSize = 14.sp,
                     modifier = Modifier.padding(16.dp)
