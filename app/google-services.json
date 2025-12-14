@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "522479538398",
+    "project_id": "aurawake-df141",
+    "storage_bucket": "aurawake-df141.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522479538398:android:2e794607aff9378604f24f",
+        "android_client_info": {
+          "package_name": "com.aura.wake"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVyIA0oFAMISovcwaDcrX2CeG-jhLDZFY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

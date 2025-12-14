@@ -11,6 +11,7 @@ composeBom = "2024.09.00"
 navigationCompose = "2.8.5"
 room = "2.6.1"
 ksp = "2.0.21-1.0.27"
+googleServices = "4.4.2"
 cameraX = "1.4.0"
 mlKitBarcode = "17.3.0"
 gson = "2.11.0"
@@ -59,4 +60,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 
