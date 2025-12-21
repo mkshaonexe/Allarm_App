@@ -15,12 +15,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.aura.wake.data.repository.AuthRepository
 import com.aura.wake.ui.components.LoginPrompt
-import io.github.jan.supabase.gotrue.SessionStatus
+import io.github.jan.supabase.auth.status.SessionStatus
 
 @Composable
 fun FriendsScreen(navController: NavController) {
      val authRepository = androidx.compose.runtime.remember { AuthRepository() }
-     val sessionStatus by authRepository.sessionStatus.collectAsState(initial = SessionStatus.NotAuthenticated)
+     val sessionStatus by authRepository.sessionStatus.collectAsState(initial = SessionStatus.NotAuthenticated(false))
 
     Box(
         modifier = Modifier.fillMaxSize().background(Color.Black),

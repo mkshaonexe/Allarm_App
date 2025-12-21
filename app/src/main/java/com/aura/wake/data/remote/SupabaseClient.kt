@@ -2,9 +2,12 @@ package com.aura.wake.data.remote
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.gotrue.Auth
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.realtime
 import com.aura.wake.BuildConfig
 
 /**
@@ -23,7 +26,10 @@ object SupabaseClient {
             supabaseKey = BuildConfig.SUPABASE_ANON_KEY
         ) {
             install(Postgrest)
-            install(Auth)
+            install(Auth) {
+                scheme = "com.aura.wake"
+                host = "login"
+            }
             install(Realtime)
         }
     }
