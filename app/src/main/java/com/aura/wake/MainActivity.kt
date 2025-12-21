@@ -1,5 +1,7 @@
 package com.aura.wake
 
+import io.github.jan.supabase.auth.handleDeeplinks
+
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -45,6 +47,9 @@ class MainActivity : ComponentActivity() {
                 android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             )
         }
+
+        // Handle Supabase Auth Callback (if app launched via deep link)
+        com.aura.wake.data.remote.SupabaseClient.client.handleDeeplinks(intent)
 
         enableEdgeToEdge()
         // Force light status bar icons (visible on dark background)
@@ -354,6 +359,9 @@ class MainActivity : ComponentActivity() {
         setIntent(intent) // Update the intent 
         intentState = intent
         android.util.Log.d("MainActivity", "🔔 onNewIntent - updated intentState")
+        
+        // Handle Supabase Auth Callback
+        com.aura.wake.data.remote.SupabaseClient.client.handleDeeplinks(intent)
     }
     
     // Prevent user from leaving the app when alarm is ringing
