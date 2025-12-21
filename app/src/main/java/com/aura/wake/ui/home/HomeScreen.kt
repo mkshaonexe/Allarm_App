@@ -289,11 +289,15 @@ fun HomeTabContent(
     var hasOverlayPermission by remember { mutableStateOf(true) }
     var hasNotificationPermission by remember { mutableStateOf(true) }
     var hasExactAlarmPermission by remember { mutableStateOf(true) }
+    var hasBatteryPermission by remember { mutableStateOf(true) }
 
     // Check Permissions Function
     fun checkPermissions() {
          if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             hasOverlayPermission = android.provider.Settings.canDrawOverlays(context)
+            
+            val pm = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+            hasBatteryPermission = pm.isIgnoringBatteryOptimizations(context.packageName)
         }
         
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -414,23 +418,107 @@ fun HomeTabContent(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = nextAlarmString.ifEmpty { "No alarms set" },
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp, // Larger Hero Text
-                        letterSpacing = (-0.5).sp
-                    )
-                    if (nextAlarmString.isNotEmpty()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            Icons.Default.KeyboardArrowRight, 
-                            contentDescription = null, 
-                            tint = PrimaryRed, // Red tint for action
-                            modifier = Modifier.size(28.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = nextAlarmString.ifEmpty { "No alarms set" },
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp, // Larger Hero Text
+                            letterSpacing = (-0.5).sp
                         )
+                        if (nextAlarmString.isNotEmpty()) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                Icons.Default.KeyboardArrowRight, 
+                                contentDescription = null, 
+                                tint = PrimaryRed, // Red tint for action
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    // Permission Fix Alert
+                    if (!hasOverlayPermission) {
+                        Card(
+                            onClick = {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                                    val intent = android.content.Intent(
+                                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                        android.net.Uri.parse("package:${context.packageName}")
+                                    )
+                                    context.startActivity(intent)
+                                }
+                            },
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF2196F3).copy(alpha = 0.1f) // Blue tint
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2196F3)), // Blue border
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Fix Issue",
+                                    color = Color(0xFF2196F3),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Alarm may not ring",
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    } else if (!hasBatteryPermission) {
+                        // Background / Battery Alert
+                         Card(
+                            onClick = {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                                    val intent = android.content.Intent().apply {
+                                        action = android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                                        data = android.net.Uri.parse("package:${context.packageName}")
+                                    }
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        // Fallback
+                                         val fallback = android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                         context.startActivity(fallback)
+                                    }
+                                }
+                            },
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFFA726).copy(alpha = 0.1f) // Orange tint
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFA726)), // Orange border
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Fix Issue",
+                                    color = Color(0xFFFFA726),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Background restricted",
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
                     }
                 }
             }

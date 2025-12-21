@@ -31,6 +31,11 @@ class AlarmService : Service() {
     private var volumeEnforcementRunnable: Runnable? = null
     private var maxAlarmVolume: Int = 0
 
+    // Nag Mode - Repost notification if overlay is missing
+    private var nagHandler: android.os.Handler? = null
+    private var nagRunnable: Runnable? = null
+    private val NAG_INTERVAL_MS = 15000L // 15 seconds
+
     companion object {
         const val CHANNEL_ID = "ALARM_CHANNEL"
         const val NOTIFICATION_ID = 1001
@@ -105,9 +110,11 @@ class AlarmService : Service() {
         // 2. Hybrid Logic: If Overlay is permitted, Show Overlay (Strong Layer)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && android.provider.Settings.canDrawOverlays(this)) {
              Log.d("AlarmService", "🛡️ Hybrid Mode: Showing System Overlay")
+             Log.d("AlarmService", "🛡️ Hybrid Mode: Showing System Overlay")
              overlayHelper?.showOverlay(alarmId, challengeType)
         } else {
              Log.d("AlarmService", "ℹ️ Hybrid Mode: Overlay not granted, relying on Full Screen Intent")
+             startNagging(alarmId, challengeType)
         }
         
         // 3. Keep Activity Launch as backup/primary for non-overlay cases
@@ -283,8 +290,21 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Notification WITHOUT Snooze/Dismiss buttons - forces user to open the full-screen UI
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        // Create Delete PendingIntent to restart service if notification is cleared
+        val deleteIntent = Intent(this, com.aura.wake.data.alarm.AlarmReceiver::class.java).apply {
+            action = "ACTION_NOTIFICATION_DELETED"
+            putExtra("ALARM_ID", alarmId)
+            putExtra("CHALLENGE_TYPE", challengeType)
+        }
+        val deletePendingIntent = PendingIntent.getBroadcast(
+             this,
+             1, 
+             deleteIntent, 
+             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Notification with explicit OPEN action and Delete Intent for persistence
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("⏰ Alarm Ringing!")
             .setContentText("Tap to open alarm screen")
             .setSmallIcon(R.mipmap.ic_launcher)
@@ -293,20 +313,52 @@ class AlarmService : Service() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setFullScreenIntent(pendingIntent, true) // Opens alarm screen on lock screen
             .setContentIntent(pendingIntent) // Opens alarm screen when notification is tapped
+            .setDeleteIntent(deletePendingIntent) // Catch dismissal
             .setOngoing(true)
             .setAutoCancel(false)
-            .build()
+
+        // Add "OPEN" Action Button
+        builder.addAction(
+            R.mipmap.ic_launcher, 
+            "OPEN ALARM",
+            pendingIntent
+        )
+            
+        return builder.build()
     }
     
     override fun onDestroy() {
         super.onDestroy()
         overlayHelper?.removeOverlay()
         stopVolumeEnforcement() 
+        stopNagging() 
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
         vibrator?.cancel()
         Log.d("AlarmService", "🛑 Alarm service stopped")
+    }
+    private fun startNagging(alarmId: String?, challengeType: String?) {
+        nagHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        nagRunnable = object : Runnable {
+            override fun run() {
+                Log.d("AlarmService", "📢 Nag Mode: Reposting notification to ensure visibility")
+                val notification = createNotification(alarmId, challengeType)
+                val manager = getSystemService(NotificationManager::class.java)
+                manager.notify(NOTIFICATION_ID, notification)
+                
+                nagHandler?.postDelayed(this, NAG_INTERVAL_MS)
+            }
+        }
+        nagHandler?.postDelayed(nagRunnable!!, NAG_INTERVAL_MS)
+        Log.d("AlarmService", "📢 Nag Mode started")
+    }
+
+    private fun stopNagging() {
+        nagRunnable?.let { nagHandler?.removeCallbacks(it) }
+        nagHandler = null
+        nagRunnable = null
+        Log.d("AlarmService", "🔇 Nag Mode stopped")
     }
 }
 
