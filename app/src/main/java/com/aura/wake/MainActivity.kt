@@ -136,8 +136,24 @@ class MainActivity : ComponentActivity() {
                 // Let's stick to the logic: If we don't have overlay permission, that's the "blocking" screen.
                 // Notification permission is asked via system dialog on top of whatever screen we are on.
                 
+                val analyticsManager = (context.applicationContext as com.aura.wake.AlarmApplication).container.analyticsManager
+                
+                // Track current screen
+                LaunchedEffect(navController) {
+                    navController.addOnDestinationChangedListener { _, destination, _ ->
+                        val route = destination.route ?: "unknown"
+                        analyticsManager.logScreenView(route)
+                    }
+                }
+                
                 val settingsRepository = (context.applicationContext as com.aura.wake.AlarmApplication).container.settingsRepository
                 val isFirstRun = remember { settingsRepository.isFirstRun() }
+
+                // Log Initial Permission Status
+                LaunchedEffect(Unit) {
+                   analyticsManager.logPermissionStatus("notification", hasNotificationPermission) 
+                   analyticsManager.logPermissionStatus("overlay", hasOverlayPermission)
+                }
 
                 val startDestination = if (isRinging) {
                     "ringing"

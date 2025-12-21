@@ -15,10 +15,11 @@ object AppViewModelProvider {
             val scheduler = application.container.alarmScheduler
             
             val settingsRepository = application.container.settingsRepository
+            val analyticsManager = application.container.analyticsManager
             
             return when {
                 modelClass.isAssignableFrom(AlarmViewModel::class.java) -> 
-                    AlarmViewModel(repository, scheduler) as T
+                    AlarmViewModel(repository, scheduler, analyticsManager) as T
                 modelClass.isAssignableFrom(com.aura.wake.ui.onboarding.OnboardingViewModel::class.java) ->
                     com.aura.wake.ui.onboarding.OnboardingViewModel(repository, scheduler, settingsRepository) as T
                 modelClass.isAssignableFrom(com.aura.wake.ui.mission.MissionSettingsViewModel::class.java) ->

@@ -23,6 +23,7 @@ interface AppContainer {
     val alarmRepository: AlarmRepository
     val alarmScheduler: AlarmScheduler
     val settingsRepository: SettingsRepository
+    val analyticsManager: com.aura.wake.data.analytics.AnalyticsManager
 }
 
 class AppDefaultContainer(private val context: Context) : AppContainer {
@@ -34,6 +35,9 @@ class AppDefaultContainer(private val context: Context) : AppContainer {
     }
     override val settingsRepository: SettingsRepository by lazy {
         com.aura.wake.data.repository.SharedPreferencesSettingsRepository(context)
+    }
+    override val analyticsManager: com.aura.wake.data.analytics.AnalyticsManager by lazy {
+        com.aura.wake.data.analytics.AnalyticsManager(context)
     }
 }
 

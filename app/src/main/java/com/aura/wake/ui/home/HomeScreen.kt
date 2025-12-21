@@ -5,6 +5,8 @@ import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.aura.wake.data.analytics.AnalyticsManager
+import com.aura.wake.AlarmApplication
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -114,6 +116,10 @@ fun HomeScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
 
+    val analyticsManager = remember {
+        (context.applicationContext as AlarmApplication).container.analyticsManager
+    }
+
     val nextAlarmString = remember(alarms) {
         getNextAlarmString(alarms)
     }
@@ -184,7 +190,8 @@ fun HomeScreen(
                         nextAlarmString = nextAlarmString,
                         viewModel = viewModel,
                         navController = navController,
-                        contentPadding = contentPadding
+                        contentPadding = contentPadding,
+                        analyticsManager = analyticsManager
                     )
                     1 -> HistoryTabContent(contentPadding)
                     2 -> SettingsTabContent(contentPadding) 
@@ -283,7 +290,8 @@ fun HomeTabContent(
     nextAlarmString: String,
     viewModel: AlarmViewModel,
     navController: NavController,
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
+    analyticsManager: AnalyticsManager
 ) {
     val context = LocalContext.current
     var ignoredPermissions by remember { mutableStateOf(setOf<String>()) }
@@ -356,6 +364,10 @@ fun HomeTabContent(
                     description = "Required to show the alarm screen when measuring sleep or using other apps.",
                     buttonText = "Grant Permission",
                     onClick = {
+                        analyticsManager.logEvent(
+                            AnalyticsManager.EVENT_PERMISSION_GRANT_CLICK, 
+                            mapOf("permission" to "overlay")
+                        )
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                             val intent = android.content.Intent(
                                 android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -450,6 +462,10 @@ fun HomeTabContent(
                     if (!hasOverlayPermission) {
                         Card(
                             onClick = {
+                                analyticsManager.logEvent(
+                                    AnalyticsManager.EVENT_PERMISSION_GRANT_CLICK, 
+                                    mapOf("permission" to "overlay")
+                                )
                                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                                     val intent = android.content.Intent(
                                         android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -485,6 +501,10 @@ fun HomeTabContent(
                         // Background / Battery Alert
                          Card(
                             onClick = {
+                                analyticsManager.logEvent(
+                                    AnalyticsManager.EVENT_PERMISSION_GRANT_CLICK, 
+                                    mapOf("permission" to "battery_optimization")
+                                )
                                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                                     val intent = android.content.Intent().apply {
                                         action = android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS

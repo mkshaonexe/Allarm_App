@@ -15,7 +15,8 @@ import java.util.UUID
 
 class AlarmViewModel(
     private val repository: AlarmRepository,
-    private val scheduler: AlarmScheduler
+    private val scheduler: AlarmScheduler,
+    private val analyticsManager: com.aura.wake.data.analytics.AnalyticsManager
 ) : ViewModel() {
 
     val allAlarms: StateFlow<List<Alarm>> = repository.getAllAlarms()
@@ -59,6 +60,9 @@ class AlarmViewModel(
             )
             repository.insertAlarm(alarm)
             scheduler.schedule(alarm) // Schedule the alarm with AlarmManager
+            
+            // Log Event
+            analyticsManager.logAlarmCreated(challengeType.name)
         }
     }
 
@@ -71,6 +75,8 @@ class AlarmViewModel(
             } else {
                 scheduler.cancel(updated)
             }
+            // Log Event
+            analyticsManager.logAlarmToggled(alarm.id, updated.isEnabled)
         }
     }
 
@@ -78,6 +84,8 @@ class AlarmViewModel(
         viewModelScope.launch {
             scheduler.cancel(alarm)
             repository.deleteAlarm(alarm)
+            // Log Event
+            analyticsManager.logAlarmDeleted(alarm.id)
         }
     }
 
@@ -95,12 +103,17 @@ class AlarmViewModel(
         viewModelScope.launch {
             val newAlarm = alarm.copy(
                 id = UUID.randomUUID().toString(),
-                isEnabled = false // Duplicated alarms usually start off? Or match original? Let's default to match original or off. Reference implies creating a new entry. Let's set to off to avoid double scheduling immediately if user doesn't want. Or true if copy. Let's stick to true to match user intent of "duplicating".
+                isEnabled = false // Duplicated alarms match original or off.
             )
             repository.insertAlarm(newAlarm)
             if (newAlarm.isEnabled) {
                 scheduler.schedule(newAlarm)
             }
+            // Log Event
+            analyticsManager.logEvent(
+                com.aura.wake.data.analytics.AnalyticsManager.EVENT_ALARM_DUPLICATED,
+                mapOf(com.aura.wake.data.analytics.AnalyticsManager.PARAM_ALARM_ID to newAlarm.id)
+            )
         }
     }
 }
