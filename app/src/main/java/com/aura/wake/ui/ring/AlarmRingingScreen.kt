@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -94,6 +95,27 @@ fun AlarmRingingScreen(
             }
         } else {
              navController.popBackStack()
+        }
+    }
+
+    // Listen for Alarm Stop Broadcast (syncs dismissal if Overlay finishes it)
+    DisposableEffect(Unit) {
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context?, intent: Intent?) {
+                if (intent?.action == "com.aura.wake.ACTION_ALARM_STOPPED") {
+                    finishAlarm()
+                }
+            }
+        }
+        val filter = android.content.IntentFilter("com.aura.wake.ACTION_ALARM_STOPPED")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+             context.registerReceiver(receiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED)
+        } else {
+             context.registerReceiver(receiver, filter)
+        }
+
+        onDispose {
+            context.unregisterReceiver(receiver)
         }
     }
 
