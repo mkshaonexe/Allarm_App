@@ -181,7 +181,7 @@ fun HomeScreen(
         ) { padding ->
             val contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
-                bottom = 100.dp // Space for floating bottom bar
+                bottom = 80.dp // Adjusted for smaller floating bottom bar
             )
 
             Box(modifier = Modifier.fillMaxSize()) {
@@ -230,8 +230,8 @@ fun CustomBottomNavigation(
 ) {
     Card(
         modifier = modifier
-            .height(72.dp) // Slight increase for better touch area/glass feel
-            .width(300.dp), // Slightly wider
+            .height(60.dp) // Reduced from 72.dp
+            .width(280.dp), // Reduced from 300.dp
         shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1C1C1E).copy(alpha = 0.8f) // Glassy Dark tint
@@ -927,22 +927,22 @@ fun PermissionWarningCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFFFFA726).copy(alpha = 0.3f), androidx.compose.foundation.shape.RoundedCornerShape(16.dp)),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            .border(1.dp, Color(0xFFFFA726).copy(alpha = 0.3f), androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1C1C1E) // Darker background to match app theme
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(12.dp) // Reduced from 16.dp
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp) // Reduced from 12.dp
             ) {
                  Box(
                      modifier = Modifier
-                         .size(40.dp)
+                         .size(32.dp) // Reduced from 40.dp
                          .clip(androidx.compose.foundation.shape.CircleShape)
                          .background(Color(0xFFFFA726).copy(alpha = 0.1f)),
                      contentAlignment = Alignment.Center
@@ -951,15 +951,15 @@ fun PermissionWarningCard(
                         Icons.Default.Settings,
                         contentDescription = null,
                         tint = Color(0xFFFFA726), // Orange warning
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp) // Reduced from 24.dp
                     )
                  }
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp)) // Reduced from 12.dp
                 Text(
                     text = title,
                     color = Color.White,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp, // Reduced from 16.sp
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -967,13 +967,13 @@ fun PermissionWarningCard(
             Text(
                 text = description,
                 color = Color.Gray,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                modifier = Modifier.padding(bottom = 20.dp)
+                fontSize = 12.sp, // Reduced from 14.sp
+                lineHeight = 16.sp, // Reduced from 20.sp
+                modifier = Modifier.padding(bottom = 12.dp) // Reduced from 20.dp
             )
             
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp), // Reduced from 12.dp
                 modifier = Modifier.fillMaxWidth()
             ) {
                  androidx.compose.material3.Button(
@@ -981,26 +981,26 @@ fun PermissionWarningCard(
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = com.aura.wake.ui.theme.PrimaryRed
                     ),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), // Reduced from 12.dp
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp)
+                        .height(40.dp) // Reduced from 48.dp
                 ) {
-                    Text(buttonText, color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text(buttonText, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
                 
                 androidx.compose.material3.OutlinedButton(
                     onClick = onIgnore,
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
+                        .height(40.dp), // Reduced from 48.dp
                      colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
                         contentColor = Color.Gray
                     ),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp), // Reduced from 12.dp
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
                 ) {
-                    Text("Ignore")
+                    Text("Ignore", fontSize = 13.sp)
                 }
             }
         }

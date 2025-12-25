@@ -84,13 +84,21 @@ import androidx.compose.ui.platform.LocalContext
 import android.view.HapticFeedbackConstants
 import android.view.SoundEffectConstants
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+import android.Manifest
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun AlarmScreen(
     navController: NavController,
     alarmId: String? = null,
     viewModel: AlarmViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    val context = LocalContext.current
+    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+
     val currentTime = Calendar.getInstance()
     var selectedHour by remember { mutableStateOf(currentTime.get(Calendar.HOUR_OF_DAY)) }
     var selectedMinute by remember { mutableStateOf(currentTime.get(Calendar.MINUTE)) }
@@ -395,10 +403,16 @@ fun AlarmScreen(
                             onClick = { selectedChallenge = ChallengeType.SHAKE },
                             modifier = modifier
                         )
-                         ChallengeOption(
+                        ChallengeOption(
                             type = ChallengeType.QR, 
                             isSelected = selectedChallenge == ChallengeType.QR,
-                            onClick = { selectedChallenge = ChallengeType.QR },
+                            onClick = { 
+                                if (cameraPermissionState.status.isGranted) {
+                                    selectedChallenge = ChallengeType.QR 
+                                } else {
+                                    cameraPermissionState.launchPermissionRequest()
+                                }
+                            },
                             modifier = modifier
                         )
                     }

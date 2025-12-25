@@ -19,10 +19,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.aura.wake.ui.AppViewModelProvider
+import android.Manifest
+import androidx.compose.ui.platform.LocalContext
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun QrMissionSettingsScreen(
     navController: NavController,
@@ -33,6 +38,37 @@ fun QrMissionSettingsScreen(
     var isScanning by remember { mutableStateOf(false) }
     
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    var showPermissionRationaleDialog by remember { mutableStateOf(false) }
+
+    if (showPermissionRationaleDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionRationaleDialog = false },
+            title = { Text("Camera Permission Required") },
+            text = { Text("Camera access is needed to scan QR codes for this mission.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionRationaleDialog = false
+                        val intent = android.content.Intent(
+                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        ).apply {
+                            data = android.net.Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Text("Open Settings")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionRationaleDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     LaunchedEffect(viewModel.qrContent, viewModel.qrLabel) {
         qrContent = viewModel.qrContent
@@ -110,14 +146,18 @@ fun QrMissionSettingsScreen(
                 // Action Buttons
                 Button(
                     onClick = { 
-                        // Simulate Scan
-                        isScanning = true
-                        scope.launch {
-                            delay(2000) // Simulate camera delay
-                            val newContent = "simulated_qr_code_${System.currentTimeMillis()}"
-                            val newLabel = "My Toothpaste" // Mock label
-                            viewModel.saveQrSettings(newContent, newLabel)
-                            isScanning = false
+                        if (cameraPermissionState.status.isGranted) {
+                            // Permission granted: Simulate Scan
+                            isScanning = true
+                            scope.launch {
+                                delay(2000) // Simulate camera delay
+                                val newContent = "simulated_qr_code_${System.currentTimeMillis()}"
+                                val newLabel = "My Toothpaste" // Mock label
+                                viewModel.saveQrSettings(newContent, newLabel)
+                                isScanning = false
+                            }
+                        } else {
+                            cameraPermissionState.launchPermissionRequest()
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -125,7 +165,13 @@ fun QrMissionSettingsScreen(
                 ) {
                     Icon(Icons.Default.QrCodeScanner, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Scan New QR Code", fontSize = 16.sp)
+                    Text(if (cameraPermissionState.status.isGranted) "Scan New QR Code" else "Grant Camera Permission to Scan", fontSize = 16.sp)
+                }
+
+                if (!cameraPermissionState.status.isGranted) {
+                     TextButton(onClick = { showPermissionRationaleDialog = true }) {
+                         Text("Permission Issues? Open Settings", color = Color.Gray, fontSize = 12.sp)
+                     }
                 }
 
                 if (qrContent != null) {
