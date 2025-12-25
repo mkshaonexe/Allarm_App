@@ -116,5 +116,39 @@ class AlarmViewModel(
             )
         }
     }
+    suspend fun getAlarm(id: String): Alarm? {
+        return repository.getAlarm(id)
+    }
+
+    fun updateAlarmDetails(
+        id: String,
+        hour: Int, 
+        minute: Int, 
+        challengeType: ChallengeType, 
+        label: String? = null,
+        ringtoneUri: String? = null,
+        ringtoneTitle: String? = null
+    ) {
+        viewModelScope.launch {
+            val existingAlarm = repository.getAlarm(id) ?: return@launch
+            val updatedAlarm = existingAlarm.copy(
+                hour = hour,
+                minute = minute,
+                challengeType = challengeType,
+                label = if (label.isNullOrBlank()) null else label,
+                ringtoneUri = ringtoneUri,
+                ringtoneTitle = ringtoneTitle,
+                isEnabled = true // re-enable on edit usually
+            )
+            repository.updateAlarm(updatedAlarm)
+            scheduler.schedule(updatedAlarm)
+            
+            // Log Event
+            analyticsManager.logEvent(
+                "alarm_updated",
+                mapOf("challenge" to challengeType.name)
+            )
+        }
+    }
 }
 

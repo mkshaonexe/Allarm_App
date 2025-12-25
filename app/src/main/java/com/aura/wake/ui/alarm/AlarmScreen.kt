@@ -128,6 +128,25 @@ fun AlarmScreen(
         }
     }
 
+    // Load existing alarm if editing
+    LaunchedEffect(alarmId) {
+        if (alarmId != null) {
+            val alarm = viewModel.getAlarm(alarmId)
+            if (alarm != null) {
+                selectedHour = alarm.hour
+                selectedMinute = alarm.minute
+                alarmName = alarm.label ?: ""
+                selectedChallenge = alarm.challengeType
+                selectedRingtoneUri = alarm.ringtoneUri
+                selectedRingtoneTitle = alarm.ringtoneTitle
+                
+                // Update AM/PM state locally based on loaded hour
+                isPm = selectedHour >= 12
+                amPmState.value = if (isPm) 1 else 0
+            }
+        }
+    }
+
     // Init Logic for scrolling to current time would be complex with Pager w/o `scrollToPage` initial
     // Keep internal hour/min state and update it when pager verification settles.
 
@@ -137,7 +156,7 @@ fun AlarmScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        "Wake-up alarm", 
+                        if (alarmId == null) "New Alarm" else "Edit Alarm", 
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -160,7 +179,6 @@ fun AlarmScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             
-            // Name Input Field
             // Name Input Field
             Box(
                 modifier = Modifier
@@ -188,7 +206,6 @@ fun AlarmScreen(
                 )
             }
             
-            // Wheel Time Picker
             // Wheel Time Picker
             Box(
                 modifier = Modifier
@@ -287,7 +304,6 @@ fun AlarmScreen(
             }
 
             // Days Row
-            // Days Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly // Changed to SpaceEvenly for cleaner look
@@ -315,7 +331,6 @@ fun AlarmScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Mission Card
             // Mission Card
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2E)),
@@ -420,7 +435,6 @@ fun AlarmScreen(
             Spacer(modifier = Modifier.weight(1f))
             
             // Save Button & Preview Button
-            // Save Button & Preview Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -446,14 +460,26 @@ fun AlarmScreen(
                 // Save Button
                 Button(
                     onClick = {
-                        viewModel.addAlarm(
-                            selectedHour, 
-                            selectedMinute, 
-                            selectedChallenge, 
-                            alarmName,
-                            selectedRingtoneUri,
-                            selectedRingtoneTitle
-                        )
+                        if (alarmId == null) {
+                            viewModel.addAlarm(
+                                selectedHour, 
+                                selectedMinute, 
+                                selectedChallenge, 
+                                alarmName,
+                                selectedRingtoneUri,
+                                selectedRingtoneTitle
+                            )
+                        } else {
+                            viewModel.updateAlarmDetails(
+                                alarmId,
+                                selectedHour,
+                                selectedMinute,
+                                selectedChallenge,
+                                alarmName,
+                                selectedRingtoneUri,
+                                selectedRingtoneTitle
+                            )
+                        }
                         navController.popBackStack()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30)),
