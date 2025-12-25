@@ -463,6 +463,11 @@ class MainActivity : ComponentActivity() {
         }
     }
     
+    // Returns Triple(alarmId, challengeType, startChallengeImmediately)
+    private fun getRingingParams(intent: Intent?): Triple<String?, String?, Boolean> {
+        val alarmId = intent?.getStringExtra("ALARM_ID")
+        val challengeType = intent?.getStringExtra("CHALLENGE_TYPE")
+        val startImmediate = intent?.getBooleanExtra("START_CHALLENGE", false) ?: false
         return Triple(alarmId, challengeType, startImmediate)
     }
 
