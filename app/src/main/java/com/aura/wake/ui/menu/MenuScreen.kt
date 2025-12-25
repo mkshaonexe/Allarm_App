@@ -113,13 +113,41 @@ fun MenuScreen(navController: NavController) {
                     title = "Contact Us",
                     subtitle = "Report bugs or suggest features",
                     onClick = {
-                        // Open website
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("https://mkshaon.com/aurawake")
+                        // Open email with pre-filled subject and body
+                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:") // Only email apps
+                            putExtra(Intent.EXTRA_EMAIL, arrayOf("mkshaonnew31@gmail.com"))
+                            putExtra(Intent.EXTRA_SUBJECT, "AuraWake App - Issue/Bug Report/Support")
+                            putExtra(Intent.EXTRA_TEXT, """
+                                Please describe your issue, bug report, or support request here:
+                                
+                                
+                                
+                                ---
+                                Thank you for using AuraWake!
+                            """.trimIndent())
                         }
                         try {
-                           context.startActivity(intent) 
-                        } catch (e: Exception) {}
+                            context.startActivity(emailIntent)
+                        } catch (e: Exception) {
+                            // Fallback: try with ACTION_SEND if no email app
+                            val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "message/rfc822"
+                                putExtra(Intent.EXTRA_EMAIL, arrayOf("mkshaonnew31@gmail.com"))
+                                putExtra(Intent.EXTRA_SUBJECT, "AuraWake App - Issue/Bug Report/Support")
+                                putExtra(Intent.EXTRA_TEXT, """
+                                    Please describe your issue, bug report, or support request here:
+                                    
+                                    
+                                    
+                                    ---
+                                    Thank you for using AuraWake!
+                                """.trimIndent())
+                            }
+                            try {
+                                context.startActivity(Intent.createChooser(fallbackIntent, "Send Email"))
+                            } catch (e: Exception) {}
+                        }
                     }
                 )
                 SettingsItem(
