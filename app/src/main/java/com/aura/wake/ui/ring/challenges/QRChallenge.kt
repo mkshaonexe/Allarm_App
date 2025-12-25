@@ -22,6 +22,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -151,12 +154,49 @@ fun QRChallenge(
             )
         }
     } else {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Camera permission required for QR Challenge", color = Color.White)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Camera permission required for QR Challenge",
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                androidx.compose.material3.Button(
+                    onClick = { 
+                        if (cameraPermissionState.status.shouldShowRationale) {
+                            cameraPermissionState.launchPermissionRequest()
+                        } else {
+                            cameraPermissionState.launchPermissionRequest()
+                        }
+                    }
+                ) {
+                    Text("Grant Camera Permission")
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        val intent = android.content.Intent(
+                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        ).apply {
+                            data = android.net.Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Text("Open Settings", color = Color.Gray)
+                }
+            }
         }
     }
 }

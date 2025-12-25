@@ -96,14 +96,39 @@ fun AlarmScreen(
     var selectedMinute by remember { mutableStateOf(currentTime.get(Calendar.MINUTE)) }
     
     // For 12h format logic (UI only, data still 24h)
+    // We do NOT store isPm as a separate state we sync manually. 
+    // Instead we rely on selectedHour to drive everything.
+    // However, the AM/PM picker needs a state to bind to.
     val isPm = selectedHour >= 12
-    val displayHour = if (selectedHour == 0) 12 else if (selectedHour > 12) selectedHour - 12 else selectedHour
     val amPmState = remember { mutableStateOf(if (isPm) 1 else 0) } // 0=AM, 1=PM
+    
+    // Sync amPmState when selectedHour changes externally (e.g. loading from DB)
+    LaunchedEffect(selectedHour) {
+         amPmState.value = if (selectedHour >= 12) 1 else 0
+    }
 
     var selectedChallenge by remember { mutableStateOf(ChallengeType.NONE) }
     var alarmName by remember { mutableStateOf("") }
     val selectedDays = remember { mutableStateListOf<Int>().apply { addAll(listOf(1,2,3,4,5,6,7)) } } // 1=Sun, ..., 7=Sat - Default to all days
     var isDaily by remember { mutableStateOf(true) } // Default to Daily mode
+    
+    // Hoist ringtone state here so it's accessible in LaunchedEffect
+    var selectedRingtoneUri by remember { mutableStateOf<String?>(null) }
+    var selectedRingtoneTitle by remember { mutableStateOf<String?>(null) }
+    
+    // Retrieve result from navigation (moved here to keep related logic close, but observing SavedStateHandle needs context)
+    val navBackStackEntry = navController.currentBackStackEntry
+    val savedStateHandle = navBackStackEntry?.savedStateHandle
+    
+    // Observe result
+    LaunchedEffect(savedStateHandle) {
+         savedStateHandle?.getLiveData<String>("selected_ringtone_uri")?.observe(navBackStackEntry) { uri ->
+             selectedRingtoneUri = uri
+         }
+         savedStateHandle?.getLiveData<String>("selected_ringtone_title")?.observe(navBackStackEntry) { title ->
+             selectedRingtoneTitle = title
+         }
+    }
 
     val ringInString by remember {
         derivedStateOf {
@@ -140,15 +165,10 @@ fun AlarmScreen(
                 selectedRingtoneUri = alarm.ringtoneUri
                 selectedRingtoneTitle = alarm.ringtoneTitle
                 
-                // Update AM/PM state locally based on loaded hour
-                isPm = selectedHour >= 12
-                amPmState.value = if (isPm) 1 else 0
+                // No need to manually set isPm or amPmState here, the LaunchedEffect(selectedHour) above will handle it.
             }
         }
     }
-
-    // Init Logic for scrolling to current time would be complex with Pager w/o `scrollToPage` initial
-    // Keep internal hour/min state and update it when pager verification settles.
 
     Scaffold(
         containerColor = Color(0xFF1C1C1E), // Dark Background
@@ -157,7 +177,7 @@ fun AlarmScreen(
                 title = { 
                     Text(
                         if (alarmId == null) "New Alarm" else "Edit Alarm", 
-                        color = Color.White,
+                        color = Color.White, 
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     ) 
@@ -226,6 +246,9 @@ fun AlarmScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Calculate display hour for 12h format
+                    val displayHour = if (selectedHour == 0) 12 else if (selectedHour > 12) selectedHour - 12 else selectedHour
+
                     WheelPicker(
                         count = 12,
                         initialItem = if (displayHour == 12) 11 else displayHour - 1, 
@@ -276,7 +299,7 @@ fun AlarmScreen(
             Text(
                 text = ringInString,
                 color = Color.Gray,
-                fontSize = 16.sp // Slightly larger for readability
+                fontSize = 16.sp
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -306,7 +329,7 @@ fun AlarmScreen(
             // Days Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly // Changed to SpaceEvenly for cleaner look
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 val days = listOf("S", "M", "T", "W", "T", "F", "S")
                 days.forEachIndexed { index, day ->
@@ -315,7 +338,7 @@ fun AlarmScreen(
                     
                     Box(
                         modifier = Modifier
-                            .size(32.dp) // Smaller size
+                            .size(32.dp)
                             .clip(CircleShape)
                             .background(if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF2C2C2E))
                             .clickable {
@@ -337,7 +360,7 @@ fun AlarmScreen(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(12.dp)) { // Reduced padding
+                Column(modifier = Modifier.padding(12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -383,25 +406,8 @@ fun AlarmScreen(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Alarm Sound Selector
-            // Retrieve result from navigation
-            val navBackStackEntry = navController.currentBackStackEntry
-            val savedStateHandle = navBackStackEntry?.savedStateHandle
-            
-            var selectedRingtoneUri by remember { mutableStateOf<String?>(null) }
-            var selectedRingtoneTitle by remember { mutableStateOf<String?>(null) }
-            
-            // Observe result
-            LaunchedEffect(savedStateHandle) {
-                 savedStateHandle?.getLiveData<String>("selected_ringtone_uri")?.observe(navBackStackEntry) { uri ->
-                     selectedRingtoneUri = uri
-                 }
-                 savedStateHandle?.getLiveData<String>("selected_ringtone_title")?.observe(navBackStackEntry) { title ->
-                     selectedRingtoneTitle = title
-                 }
-            }
 
+            // Alarm Sound Card
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2E)),
                 shape = RoundedCornerShape(16.dp),
@@ -584,6 +590,13 @@ fun WheelPicker(
                     }
                 }
             }
+    }
+
+    // Scroll to initialItem if it changes (e.g. when alarm data is loaded)
+    LaunchedEffect(initialItem) {
+        if (pagerState.currentPage != initialItem) {
+            pagerState.scrollToPage(initialItem)
+        }
     }
 
     // visibleItemsCount = 3 means 1 selected, 1 above, 1 below roughly
