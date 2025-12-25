@@ -235,6 +235,9 @@ class MainActivity : ComponentActivity() {
                     composable("customize_ringtone") {
                         com.aura.wake.ui.menu.CustomizeRingtoneScreen(navController = navController)
                     }
+                    composable("early_access_form") {
+                        com.aura.wake.ui.menu.EarlyAccessFormScreen(navController = navController)
+                    }
                     composable("pick_ringtone") {
                          com.aura.wake.ui.menu.CustomizeRingtoneScreen(navController = navController, isPicker = true)
                     }

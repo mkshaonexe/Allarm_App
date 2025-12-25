@@ -151,11 +151,24 @@ fun MenuScreen(navController: NavController) {
                     }
                 )
                 SettingsItem(
-                    icon = Icons.Default.Star,
-                    title = "Contributions",
-                    subtitle = "Bug reporters & contributors",
+                    icon = Icons.Default.Download,
+                    title = "Install from Play Store",
+                    subtitle = "Early access form",
                     onClick = {
-                        navController.navigate("contribution")
+                        navController.navigate("early_access_form")
+                    }
+                )
+                SettingsItem(
+                    icon = Icons.Default.Public,
+                    title = "Public Group",
+                    subtitle = "Join our Telegram community",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            data = Uri.parse("https://t.me/AuraWake")
+                        }
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: Exception) {}
                     }
                 )
             }
@@ -165,7 +178,7 @@ fun MenuScreen(navController: NavController) {
                 SettingsItem(
                     icon = Icons.Default.Info,
                     title = "Version",
-                    subtitle = "1.0.0",
+                    subtitle = "0.6.5",
                     showArrow = false,
                     onClick = {}
                 )
