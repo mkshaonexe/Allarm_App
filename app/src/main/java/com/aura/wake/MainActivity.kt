@@ -463,11 +463,42 @@ class MainActivity : ComponentActivity() {
         }
     }
     
-    // Returns Triple(alarmId, challengeType, startChallengeImmediately)
-    private fun getRingingParams(intent: Intent?): Triple<String?, String?, Boolean> {
-        val alarmId = intent?.getStringExtra("ALARM_ID")
-        val challengeType = intent?.getStringExtra("CHALLENGE_TYPE")
-        val startImmediate = intent?.getBooleanExtra("START_CHALLENGE", false) ?: false
         return Triple(alarmId, challengeType, startImmediate)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Register receiver to clear intent when alarm stops
+        val filter = android.content.IntentFilter("com.aura.wake.ACTION_ALARM_STOPPED")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(alarmStopReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(alarmStopReceiver, filter)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        try {
+            unregisterReceiver(alarmStopReceiver)
+        } catch (e: IllegalArgumentException) {
+            // Receiver not registered
+        }
+    }
+
+    private val alarmStopReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: Intent?) {
+            android.util.Log.d("MainActivity", "🧹 Clearing alarm intent extras")
+            // Clear the intent that started this activity if it was an alarm intent
+            val currentIntent = this@MainActivity.intent
+            if (currentIntent?.getBooleanExtra("SHOW_ALARM_SCREEN", false) == true) {
+                 currentIntent.removeExtra("SHOW_ALARM_SCREEN")
+                 currentIntent.removeExtra("ALARM_ID")
+                 currentIntent.removeExtra("CHALLENGE_TYPE")
+                 currentIntent.removeExtra("START_CHALLENGE")
+                 setIntent(currentIntent)
+                 intentState = currentIntent
+            }
+        }
     }
 }
