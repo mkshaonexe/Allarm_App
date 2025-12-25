@@ -171,13 +171,7 @@ fun QRChallenge(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 androidx.compose.material3.Button(
-                    onClick = { 
-                        if (cameraPermissionState.status.shouldShowRationale) {
-                            cameraPermissionState.launchPermissionRequest()
-                        } else {
-                            cameraPermissionState.launchPermissionRequest()
-                        }
-                    }
+                    onClick = { cameraPermissionState.launchPermissionRequest() }
                 ) {
                     Text("Grant Camera Permission")
                 }
